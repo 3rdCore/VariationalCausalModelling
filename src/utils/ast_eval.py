@@ -41,7 +41,9 @@ def _ast_eval_expr(node):
             _ast_eval_expr(node.right),
         )
     elif isinstance(node, ast.UnaryOp):
-        return supported_ast_operators[type(node.op)](_ast_eval_expr(node.operand))  # noqa
+        return supported_ast_operators[type(node.op)](
+            _ast_eval_expr(node.operand)
+        )  # noqa
     else:
         raise ValueError(f"unsupported operation: {type(node)}")
 

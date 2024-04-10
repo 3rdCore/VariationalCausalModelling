@@ -12,3 +12,6 @@ hydra-core
 beartype
 submitit
 hydra-submitit-launcher
+networkx
+causaldag
+black
