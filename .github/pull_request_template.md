@@ -19,7 +19,7 @@ Closes # <!-- Issue # here -->
 - [ ] My pull request adheres to the code style of this project
 - [ ] My code requires changes to the documentation
 - [ ] I have updated the documentation as required
-- [ ] All the tests have passed
+- [ ] All the tests have passed if applicable
 - [ ] Branch name follows `type/descript` (e.g. `feature/add-llm-agents`)
 - [ ] Ready for code review
 
