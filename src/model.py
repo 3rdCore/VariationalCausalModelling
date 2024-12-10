@@ -6,7 +6,6 @@ from beartype import beartype
 from torch import Tensor, nn
 from torch.nn import functional as F
 
-
 class abstract_model(ABC, nn.Module):
     def __init__(self):
         super().__init__()
