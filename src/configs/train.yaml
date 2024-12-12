@@ -2,26 +2,70 @@ defaults:
   - hydra: default
   - _self_
 
-save_dir: "logs/"
+save_dir: "/home/mila/t/tom.marty/IFT6269/project/VariationalCausalModelling/logs"
 seed: 1
 
 logger:
   _target_: lightning.pytorch.loggers.WandbLogger
-  entity: # Add your wandb entity here
-  project: # Add your wandb project here
+  entity: dhanya-shridar
+  project: VariationalCM
   name: ${now:%Y-%m-%d}_${now:%H-%M-%S}
   save_dir: ${save_dir}
   offline: False
   tags: null
+
+task :
+  _target_: task.SCM_Reconstruction
+  encoder: ${encoder}
+  decoder: ${decoder}
+  lr: 1e-4
+  temperature: 0.5
+
+train_dataset:
+  _target_: dataset.SCM_Dataset
+  generator : LinearANM
+  n_samples: 10000
+  graph: ${G}
+  observational_density: 0.8
+
+val_dataset:
+  _target_: dataset.SCM_Dataset
+  generator : LinearANM
+  n_samples: 10000
+  graph: ${G}
+  observational_density: 0.8
+
+datamodule:
+  _target_: dataset.SCMDataModule
+  batch_size: 256
+  train_dataset: ${train_dataset}
+  val_dataset: ${train_dataset}
+
+trainer:
+  max_epochs: 1000
+  enable_progress_bar: True
 
 G:
   _target_: dataset.DAG
   n_variables : 10
   density : 0.3
 
-train_dataset:
-  _target_: dataset.SCM_Dataset
+encoder:
+  _target_: model.CMEncoder
+  input_dim: ${G.n_variables}
+  hidden_dim: 32
+  latent_dim: ${G.n_variables}
+  n_layers: 3
+  activation: relu
+
+decoder:
+  _target_: model.CMDecoder
+  input_dim: ${G.n_variables}
+  hidden_dim: 32
+  latent_dim: ${G.n_variables}
+  n_layers: 3
+  activation: relu
   graph: ${G}
-  batch_size : 128
-  n_samples: 10000
-  observational_density: 0.8
+
+
+callbacks: null

@@ -26,6 +26,7 @@ def train(cfg):
         enable_checkpointing=False,
         **cfg.trainer,
     )
+
     trainer.fit(model=task, datamodule=dataset)
 
 
