@@ -19,53 +19,59 @@ task :
   encoder: ${encoder}
   decoder: ${decoder}
   lr: 1e-4
-  temperature: 0.5
+  temperature: 1.0
+  is_beta_VAE : False
+  beta: 1.0
 
 train_dataset:
   _target_: dataset.SCM_Dataset
   generator : LinearANM
   n_samples: 10000
-  graph: ${G}
+  scm: ${SCM}
   observational_density: 0.8
+  shift: 1.0
 
 val_dataset:
   _target_: dataset.SCM_Dataset
-  generator : LinearANM
-  n_samples: 10000
-  graph: ${G}
-  observational_density: 0.8
+  generator : ${train_dataset.generator}
+  n_samples: 1000
+  scm: ${SCM}
+  observational_density: ${train_dataset.observational_density}
+  shift: ${train_dataset.shift}
 
 datamodule:
   _target_: dataset.SCMDataModule
-  batch_size: 256
+  batch_size: 64
   train_dataset: ${train_dataset}
-  val_dataset: ${train_dataset}
+  val_dataset: ${val_dataset}
 
 trainer:
-  max_epochs: 1000
+  max_epochs: 10
   enable_progress_bar: True
+  log_every_n_steps: 10
+  val_check_interval: 0.1
 
-G:
-  _target_: dataset.DAG
+SCM:
+  _target_: dataset.SCM
   n_variables : 10
-  density : 0.3
+  density : 0.4
 
 encoder:
   _target_: model.CMEncoder
-  input_dim: ${G.n_variables}
+  input_dim: ${SCM.n_variables}
   hidden_dim: 32
-  latent_dim: ${G.n_variables}
+  latent_dim: ${SCM.n_variables}
   n_layers: 3
   activation: relu
 
 decoder:
   _target_: model.CMDecoder
-  input_dim: ${G.n_variables}
+  input_dim: ${SCM.n_variables}
   hidden_dim: 32
-  latent_dim: ${G.n_variables}
+  latent_dim: ${SCM.n_variables}
   n_layers: 3
   activation: relu
-  graph: ${G}
+  graph: ${SCM}
 
 
 callbacks: null

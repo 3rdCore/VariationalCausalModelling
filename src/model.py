@@ -6,7 +6,7 @@ from beartype import beartype
 from torch import Tensor, nn
 from torch.nn import functional as F
 
-from dataset import DAG
+from dataset import SCM
 
 
 class abstract_model(ABC, nn.Module):
@@ -61,7 +61,7 @@ class CMDecoder(abstract_model):
     @beartype
     def __init__(
         self,
-        graph: DAG,
+        graph: SCM,
         input_dim: int,
         hidden_dim: int,
         latent_dim: int,

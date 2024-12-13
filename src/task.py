@@ -19,15 +19,17 @@ class SCM_Reconstruction(ABC, LightningModule):
         self,
         encoder: CMEncoder,
         decoder: CMDecoder,
-        temperature: float,
+        temperature: float | int,
+        is_beta_VAE: bool,
         lr: float = 1e-4,
+        beta: float | int = 1.0,
     ):
         self.save_hyperparameters(ignore="encoder, decoder")
         super().__init__()
         self.encoder = encoder
         self.decoder = decoder
         self.temperature = temperature
-        self.beta = nn.Parameter(torch.tensor(1.0))  # Learnable beta parameter
+        self.beta = nn.Parameter(torch.tensor(beta), requires_grad=is_beta_VAE)
 
     @beartype
     def gumbel_softmax_sample(self, logits: Tensor, temperature: float) -> Tensor:
@@ -45,40 +47,39 @@ class SCM_Reconstruction(ABC, LightningModule):
         Returns:
             any: Predictions.
         """
-
-        unormalized_dist = self.encoder(x)
-        unormalized_dist = torch.stack([unormalized_dist, 1 - unormalized_dist], dim=2)
-        posterior = self.gumbel_softmax_sample(unormalized_dist, temperature=self.temperature)
-        z = torch.argmax(posterior, dim=2)
+        # sigmoid activation to get the probability of the latent variable
+        posterior = torch.sigmoid(self.encoder(x))
+        posterior = torch.stack([posterior, 1 - posterior], dim=2)
+        z_float = self.gumbel_softmax_sample(posterior, temperature=self.temperature)
+        z_hard = torch.argmax(z_float, dim=2)
         # straight through gradient estimator
-        z = (z - posterior[:, :, 1]).detach() + posterior[:, :, 1]
+        z = (z_hard - z_float[:, :, 1]).detach() + z_float[:, :, 1]
         mu_hat = self.decoder(z)
         return {"mu_hat": mu_hat, "posterior": posterior, "z": z}
 
     @beartype
     def training_step(self, data: Any, batch_idx: int) -> Tensor:
-        x, target = data
+        x, mu, target = data
         dict = self.forward(x)
         mu_hat = dict["mu_hat"]
         posterior = dict["posterior"]
-        loss = self.loss_function(x, mu_hat, posterior)
+        z = dict["z"]
+        loss = self.loss_function(mu, mu_hat, posterior)
         self.log("train_loss", loss)
         return loss
 
     @beartype
     def validation_step(self, data: Any, batch_idx: int) -> Tensor:
-        x, target = data
+        x, mu, target = data
         dict = self.forward(x)
         mu_hat = dict["mu_hat"]
         posterior = dict["posterior"]
         z = dict["z"]
-        loss = self.loss_function(x, mu_hat, posterior)
+        loss = self.loss_function(mu, mu_hat, posterior)
         self.log("val_loss", loss)
-        # log beta parameter
-        print(self.beta.item())
         return loss
 
-    def loss_function(self, x, mu_hat, posterior) -> Tensor:
+    def loss_function(self, mu, mu_hat, posterior) -> Tensor:
         """
 
         Returns:
@@ -86,18 +87,16 @@ class SCM_Reconstruction(ABC, LightningModule):
         """
         # elementwise squared error
         # MSE loss between the input and the output
-        reco_loss = (x - mu_hat).pow(2).mean()
+        reco_loss = F.mse_loss(mu, mu_hat, reduction="sum")
         self.log("reconstruction_loss", reco_loss)
 
         regularization_loss = 0
 
-        entropy = -(
-            posterior[:, :, 0] * torch.log(posterior[:, :, 0])
-            + posterior[:, :, 1] * torch.log(posterior[:, :, 1])
-        )
-        entropy = entropy[torch.isfinite(entropy)].view_as(entropy)
+        entropy = posterior[:, :, 0] * torch.log(posterior[:, :, 0]) + posterior[:, :, 1] * torch.log(
+            posterior[:, :, 1]
+        )  # TODO check if this is correct
 
-        regularization_loss += torch.mean(torch.sum(entropy, dim=1))
+        regularization_loss += -torch.sum(entropy[torch.isfinite(entropy)])
 
         self.log("regularization_loss", regularization_loss)
         loss = reco_loss + self.beta * regularization_loss
@@ -106,9 +105,3 @@ class SCM_Reconstruction(ABC, LightningModule):
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.hparams.lr)
-
-    """example of property that can be added
-    @property
-    def is_a_lightning_module(self) -> bool:
-        return True
-    """
