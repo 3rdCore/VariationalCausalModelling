@@ -10,11 +10,17 @@ from utils import ast_eval
 
 @hydra.main(config_path="./configs/", config_name="train", version_base=None)
 def train(cfg):
-    seed_everything(cfg.seed)
-    dataset = hydra.utils.instantiate(cfg.datamodule)
+    scm = hydra.utils.instantiate(cfg.SCM)
+
+    # Pass the same SCM instance to both datasets
+    train_dataset = hydra.utils.instantiate(cfg.train_dataset, scm=scm)
+    val_dataset = hydra.utils.instantiate(cfg.val_dataset, scm=scm)
+    dataset = hydra.utils.instantiate(cfg.datamodule, train_dataset=train_dataset, val_dataset=val_dataset)
     task = hydra.utils.instantiate(cfg.task)
     logger = hydra.utils.instantiate(cfg.logger) if cfg.logger else False
-    callbacks = [hydra.utils.instantiate(cfg.callbacks)] if cfg.callbacks else None
+    callbacks = (
+        [hydra.utils.instantiate(cfg.callbacks[cb]) for cb in cfg.callbacks] if cfg.callbacks else None
+    )
 
     if logger:
         logger.experiment.config.update(OmegaConf.to_container(cfg, resolve=True))

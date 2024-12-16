@@ -64,7 +64,6 @@ class CMDecoder(abstract_model):
         graph: SCM,
         input_dim: int,
         hidden_dim: int,
-        latent_dim: int,
         n_layers: int,
         activation: str = "relu",
     ) -> None:
@@ -73,7 +72,6 @@ class CMDecoder(abstract_model):
         self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         self.n_layers = n_layers
-        self.latent_dim = latent_dim
         if activation == "relu":
             self.activation = torch.nn.ReLU()
         elif activation == "tanh":
@@ -82,7 +80,7 @@ class CMDecoder(abstract_model):
         self.mechanisms = nn.ModuleList()
         for i in range(self.graph().shape[0]):
             numb_parents = self.graph()[:, self.topological_orders[i]].sum()
-            input_dim = i + 1 + numb_parents
+            input_dim = 1 + numb_parents
             self.mechanisms.append(build_model(input_dim, self.hidden_dim, 1, self.n_layers, self.activation))
 
     @beartype
@@ -96,14 +94,14 @@ class CMDecoder(abstract_model):
             parents = self.graph()[:, variable].nonzero()[0]
             # concat with z[:i]
 
-            input = torch.cat((x[:, parents], z[:, : i + 1]), dim=1)
+            input = torch.cat((x[:, parents], z[:, i].unsqueeze(1)), dim=1)
             x[:, self.topological_orders[i]] = mechanism(input).flatten()
 
         return x
 
 
 def build_model(
-    input_dim: int, hidden_dim: int, latent_dim: int, n_layers: int, activation: nn.Module
+    input_dim: int, hidden_dim: int, output_dim: int, n_layers: int, activation: nn.Module
 ) -> nn.Sequential:
     layers = [
         nn.Linear(input_dim, hidden_dim),
@@ -112,6 +110,6 @@ def build_model(
     for _ in range(n_layers - 2):
         layers.append(nn.Linear(hidden_dim, hidden_dim))
         layers.append(activation)
-    layers.append(nn.Linear(hidden_dim, latent_dim))
+    layers.append(nn.Linear(hidden_dim, output_dim))
 
     return nn.Sequential(*layers)

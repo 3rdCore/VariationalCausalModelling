@@ -55,9 +55,9 @@ class SCM:
 
         sigmas = sample_weights_from_trunc_uniform((self.n_variables,))
 
-        int_mean_shift = 2 + sample_weights_from_trunc_uniform((self.n_variables + 1,))
+        int_mean_shift = 1 + sample_weights_from_trunc_uniform((self.n_variables + 1,))
         int_mean_shift[0] = 0
-        int_cov_shift = 2 + sample_weights_from_trunc_uniform((self.n_variables + 1,))
+        int_cov_shift = 1 + sample_weights_from_trunc_uniform((self.n_variables + 1,))
         int_cov_shift[0] = 0
 
         return {
@@ -112,8 +112,13 @@ class SCM_Dataset(Dataset):
         return self.n_samples
 
     @beartype
-    def __getitem__(self, index) -> Tuple[Tensor, Tensor, Tensor]:
-        data_tuple = (self.data["x"][index], self.data["mu"][index], self.data["target"][index])
+    def __getitem__(self, index) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+        data_tuple = (
+            self.data["x"][index],
+            self.data["noise"],
+            self.data["mu"][index],
+            self.data["target"][index],
+        )
         return data_tuple
 
     @beartype
@@ -133,11 +138,12 @@ class SCM_Dataset(Dataset):
         x = self.shift + torch.randn(
             self.n_samples, self.n_variables, dtype=torch.float32
         )  # shifted exogenous noise
+        noise = x.clone()
         mu = self.shift + torch.zeros(self.n_samples, self.n_variables, dtype=torch.float32)
         for order in topological_orders:
             self.mechanism(x, params_dict, order, one_hot)
             self.mechanism(mu, params_dict, order, one_hot)
-        data_dict = {"x": x, "mu": mu, "target": one_hot}
+        data_dict = {"x": x, "noise": noise, "mu": mu, "target": one_hot}
         return data_dict, params_dict
 
     @beartype

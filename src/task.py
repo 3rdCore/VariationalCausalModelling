@@ -32,7 +32,7 @@ class SCM_Reconstruction(ABC, LightningModule):
         self.beta = nn.Parameter(torch.tensor(beta), requires_grad=is_beta_VAE)
 
     @beartype
-    def gumbel_softmax_sample(self, logits: Tensor, temperature: float) -> Tensor:
+    def gumbel_softmax_sample(self, logits: Tensor, temperature: float | int) -> Tensor:
         gumbels = -torch.empty_like(logits).exponential_().log()  # Sample from Gumbel(0, 1)
         gumbels = (logits + gumbels) / temperature  # Add Gumbel noise and divide by temperature
         return F.softmax(gumbels, dim=2)
@@ -59,23 +59,27 @@ class SCM_Reconstruction(ABC, LightningModule):
 
     @beartype
     def training_step(self, data: Any, batch_idx: int) -> Tensor:
-        x, mu, target = data
+        x, noise, mu, target = data
         dict = self.forward(x)
         mu_hat = dict["mu_hat"]
         posterior = dict["posterior"]
         z = dict["z"]
-        loss = self.loss_function(mu, mu_hat, posterior)
+        reco_loss, regularization_loss, loss = self.loss_function(mu, mu_hat, posterior)
+        self.log("train_reconstruction_loss", reco_loss)
+        self.log("train_regularization_loss", regularization_loss)
         self.log("train_loss", loss)
         return loss
 
     @beartype
     def validation_step(self, data: Any, batch_idx: int) -> Tensor:
-        x, mu, target = data
+        x, noise, mu, target = data
         dict = self.forward(x)
         mu_hat = dict["mu_hat"]
         posterior = dict["posterior"]
         z = dict["z"]
-        loss = self.loss_function(mu, mu_hat, posterior)
+        reco_loss, regularization_loss, loss = self.loss_function(mu, mu_hat, posterior)
+        self.log("val_reconstruction_loss", reco_loss)
+        self.log("val_regularization_loss", regularization_loss)
         self.log("val_loss", loss)
         return loss
 
@@ -88,20 +92,18 @@ class SCM_Reconstruction(ABC, LightningModule):
         # elementwise squared error
         # MSE loss between the input and the output
         reco_loss = F.mse_loss(mu, mu_hat, reduction="sum")
-        self.log("reconstruction_loss", reco_loss)
 
         regularization_loss = 0
 
-        entropy = posterior[:, :, 0] * torch.log(posterior[:, :, 0]) + posterior[:, :, 1] * torch.log(
+        entropy = -posterior[:, :, 0] * torch.log(posterior[:, :, 0]) - posterior[:, :, 1] * torch.log(
             posterior[:, :, 1]
         )  # TODO check if this is correct
 
-        regularization_loss += -torch.sum(entropy[torch.isfinite(entropy)])
+        regularization_loss -= torch.sum(entropy[torch.isfinite(entropy)])
 
-        self.log("regularization_loss", regularization_loss)
         loss = reco_loss + self.beta * regularization_loss
 
-        return loss
+        return reco_loss, regularization_loss, loss
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.hparams.lr)
