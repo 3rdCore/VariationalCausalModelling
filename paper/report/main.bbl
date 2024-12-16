@@ -1,0 +1,19 @@
+\begin{thebibliography}{2}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Mahajan et~al.(2024)Mahajan, Gladrow, Hilmkil, Zhang, and Scetbon]{mahajan_zero-shot_2024}
+Mahajan, D., Gladrow, J., Hilmkil, A., Zhang, C., and Scetbon, M.
+\newblock Zero-{Shot} {Learning} of {Causal} {Models}, October 2024.
+\newblock URL \url{http://arxiv.org/abs/2410.06128}.
+\newblock arXiv:2410.06128.
+
+\bibitem[Pearl(2009)]{Pearl_2009}
+Pearl, J.
+\newblock \emph{Causality}.
+\newblock Cambridge University Press, 2 edition, 2009.
+
+\end{thebibliography}
