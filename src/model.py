@@ -80,7 +80,7 @@ class CMDecoder(abstract_model):
         self.mechanisms = nn.ModuleList()
         for i in range(self.graph().shape[0]):
             numb_parents = self.graph()[:, self.topological_orders[i]].sum()
-            input_dim = 1 + numb_parents
+            input_dim = 2 + numb_parents
             self.mechanisms.append(build_model(input_dim, self.hidden_dim, 1, self.n_layers, self.activation))
 
     @beartype
@@ -88,13 +88,11 @@ class CMDecoder(abstract_model):
         """Forward pass of the decoder."""
         x = torch.zeros(z.shape[0], self.graph().shape[0]).type_as(z)
         # permute z to match the topological order
-        z = z[:, self.topological_orders]
         for i, mechanism in enumerate(self.mechanisms):
             variable = self.topological_orders[i]
             parents = self.graph()[:, variable].nonzero()[0]
-            # concat with z[:i]
 
-            input = torch.cat((x[:, parents], z[:, i].unsqueeze(1)), dim=1)
+            input = torch.cat((x[:, parents], z[:, [0, self.topological_orders[i] + 1]]), dim=1)
             x[:, self.topological_orders[i]] = mechanism(input).flatten()
 
         return x
