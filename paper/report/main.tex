@@ -38,7 +38,7 @@
 
 % The \icmltitle you define below is probably too long as a header.
 % Therefore, a short form for the running title is supplied here:
-\icmltitlerunning{Submission and Formatting Instructions for ICML 2018}
+\icmltitlerunning{Autoregressive VAE for Causal Modeling}
 
 \begin{document}
 
@@ -132,8 +132,8 @@ Another important notion is the notion of interventional regime, which caracteri
 
 \paragraph{Structural minimality}
 
-\paragraph{Faithfulness}
-
+\paragraph{interventional Faithfulness}
+REMARK : if the intervvention are not strong enought, we can't disantangle (latent features collapses during training)
 \section{Setting}\label{subsec:setting}
 
 In causal modeling, given a dataset $\mathcal{D}$ generated from an SCM $\mathcal{S}= (\mathcal{G}, \mathbb{P}_{\boldsymbol{\epsilon}}, \mathcal{F})$, the goal is usually to retrieve full knowledge about $\mathcal{S}$. In \textit{Causal Discovery}, the challenge is to infer the graph $\mathcal{G}$, which is a particularily harduous task because of the inherent difficulties arising from discrete optimization (a graph a is discrete structure) under constraint (e.g. Acyclicity). In \textit{Causal Modelling}, the goal is to learn the mechanisms $\mathcal{F}$. Depending on what is to be learned, different assumptions have to be made on the data-generation process in order to identify the causal model. These assumptions can be summarized as follows:
@@ -174,15 +174,22 @@ We could represents this data-generation process with a latent-variable model wh
 
 \section{Method}\label{subsec:Method}
 
-In this problem we are trying to learn a generative model of the data under unobserved interventions, we will use a Variational Auto-encoder \citep{kingma2022autoencodingvariationalbayes}
-with discrete latent variables for this purpose. In this setting the latent variables are the interventional target $z_i \quad i \in [1,N]$ of each sample $x$. In order to faithfully model the data-generation process,
+In this problem we are trying to learn a generative model of the data under unobserved interventions, for this purpose we will use a Variational Auto-encoder \citep{kingma2022autoencodingvariationalbayes}
+with discrete latent variables, the decoding will take profit of the known graph structure to reconstruct the variables $X_i$ from their sampled parents $\text{Pa}(X_i)$, in an autoregressive fashion.
+. In this setting the latent variables are the interventional target $z_i \quad i \in [1,N]$ of each sample $x$. In order to faithfully model the data-generation process,
 A VAE is a general framework for solving statistical modeling problem with unobserved latent variables. Given a data point $x$, the Variational Auto-encoder (VAE) is tasked to learn an approximate posterior distribution over these latent variables $q_\phi(z | x)$. Basically, the algorithm consist in maximizing the \textbf{evidence lower bound (ELBO)}, a lower bound of the log-likelihood of the data defined as follows :
 \begin{align*}
     &\quad\quad \log p_\theta(x) \geq  \\
     & \underbrace{ - \text{KL}\left(q_\phi(z | x) \,||\, p_\theta(z)\right)+ \mathbb{E}_{q_\phi(z | x)} \left[ \log p_\theta(x | z) \right]}_{\text{ELBO}}
 \end{align*}
 
-In this optimization problem, we want to find the parameters $\theta$ and $\phi$ that maximize the ELBO. $q_\phi(z | x)$ is the approximate posterior distribution over the latent variables and $phi$ defines the variational family of distributions used to approximate the posterior. $p_\theta(z)$ is the prior distribution over the latent variables and $p_\theta(x | z)$ is the likelihood of the data given the latent variables.
+In this optimization problem, we want to find the parameters $\theta$ and $\phi$ that maximize the ELBO. $q_\phi(z | x)$ is the approximate posterior distribution over the latent variables and $\phi$ defines the variational family of distributions used to approximate the posterior. $p_\theta(z)$ is the prior distribution over the latent variables and $p_\theta(x | z)$ is the likelihood of the data given the latent variables. We refer to figure \ref{fig:architecture} for a representation of the full architecture of the model.
+\begin{figure}
+\centering
+    \includegraphics[width=0.5\textwidth]{images/architecture.pdf}
+    \caption{Architecture of the Variational Auto-Encoder. An encoder takes as input the data $x$ and outputs the parameters of the approximate posterior categorical distribution $q_\phi(z | x)$. The sampled discrete latent variables $z$ are then fed to the decoder that outputs the parameters of the likelihood distribution $p_\theta(x | z)$.} During backpropagation, the discrete latent are approximated using the Gumbel-Softmax reparametrization trick. For more details on the architecture of the likelyhood model $p_\theta(x | z)$, we refer to Figure \ref{fig:architecture_decoder}.
+    \label{fig:architecture}
+\end{figure}
 
 \paragraph{Regime Learning ($q_\phi(z | x)$)}Given that for each mechanism $f_i$, we have a set of samples $D_{\mathcal{I}_k}$ that were generated under the same intervention $\mathcal{I}_k$, we can leverage this shared characteristic to better encode the interventions. We therefore propose to use a boolean latent variable $z_i$ that encodes the state of each mechanism $f_i$ (intervened or not intervened). We use the following formulation : $\tilde{z} \sim \mathcal{B}(\pi_\phi(x))$ and $z = \text{one-hot}(\tilde{z})$, where $\mathcal{B}$ is a multinoulli distribution parameterized by $\pi_\phi(x)$, the output of a neural network that predict the probability of each mechanism to be intervened.
 
@@ -206,14 +213,35 @@ Given that the graph $\mathcal{G}$ is known, we can use the following factorizat
     &= \prod_{i = 1}^N p_\theta(x_i | \text{Pa}(X_i), z_i)
 \end{align*}
 
-We will use a neural network to model the conditional distribution $p_\theta(x_i | \text{Pa}(X_i), z_i)$ for each mechanism $f_i$. Specifically, $p_\theta(x_i | \text{Pa}(X_i), z_i) = \mathcal{N}(\mu_\theta(x_i, \text{Pa}(X_i), z_i), 1)$ where $\mu_\theta(x_i, \text{Pa}(X_i), z_i)$ is the output of a neural network that takes as input the parents of $X_i$ and the infered state of the mechanism $z_i$. We chose to model the likelihood as a gaussian distribution with unit variance because it accounts for the stochasticity of the exogenous variable $N_i$ while simplifying the optimization of the ELBO.
+We will use a neural network to model the conditional distribution $p_\theta(x_i | \text{Pa}(X_i), z_i)$ for each mechanism $f_i$. Specifically, $p_\theta(x_i | \text{Pa}(X_i), z_i) = \mathcal{N}(\mu_\theta(x_i, \text{Pa}(X_i), z_i), 1)$ where $\mu_\theta(x_i, \text{Pa}(X_i), z_i)$ is the output of a neural network that takes as input the parents of $X_i$ and the infered state of the mechanism $z_i$. We chose to model the likelihood as a gaussian distribution with unit variance because it allows to account for the stochasticity of the exogenous variable $N_i$ while keeping the optimization of the ELBO simple. Specifically, the likelihood term of the ELBO can be written as follows :
+\begin{align*}
+    & \quad \mathbb{E}_{q_\phi(z | x)} \left[ \log p_\theta(x | z) \right] \\ &\simeq \underbrace{\frac{1}{L} \sum_{l = 1}^L }_{\text{n latent samples}} \sum_{i = 1}^N \log \mathcal{N}(x_i | \mu_\theta(x_i, \text{Pa}(X_i), z_i), 1)\\
+    &\simeq \frac{1}{L} \sum_{l = 1}^L \sum_{i = 1}^N \left( -\frac{1}{2} \left( x_i - \mu_\theta(x_i, \text{Pa}(X_i), z_i) \right)^2 \right) + \text{const.}
+\end{align*}
+Maximizing the expected log-likelihood of the data under the model is equivalent to minimizing the MSE loss for each mechanism of the causal model.
 
+\todo{talk about Autoregressive stuff}
+\begin{figure}
+\centering
+    \includegraphics[width=0.35\textwidth]{images/architecture_decoder.pdf}
+    \caption{Architecture of the likelihood model $p_\theta(x | z)$. Each mechanism $f_i$ is modeled as a gaussian distribution with mean $\mu_\theta(x_i, \text{Pa}(X_i), z_i)$ and unit variance. The mean of the input sample is reconstructed autoregressively following the topological order of the graph $\mathcal{G}$.}
+    \label{fig:architecture_decoder}
+\end{figure}
+\paragraph{discrete reparametrization trick}
+The latent variable $z$ lies in a discrete space, which makes the objective non-differentiable with respect to the sampling process $q_\phi(z | x)$. For this reason, we will use the Gumbel Softmax reparameterization trick \citep{jang2017categoricalreparameterizationgumbelsoftmax} to make the sampling process differentiable while keeping the discrete nature of the latent variables.
+ \todo{add a section in poster  : why I made these choice}
 \section{Experiments}\label{subsec:Experiments}
+In this section, we discuss the experiments that we run to evaluate the performance of our model at infering the right regimes and learning the mechanisms of the causal model. We will first describe the data-generation process, then we will present the evaluation metrics used to assess the performance of our model. We will Additionally run an ablation study to evaluate the necessity of some of the assumption we made in the data-generation process.
 
 \subsection{Data-generation process}
+Compared the standard EM for which a closed form update does not always exist, Variational methods allows to describe a wider variety of posterior distributions, allowing to tackle more complex (i.e. realistic) problems. In this project, we consider that the data was generated by an additive noise models with linear mechanisms.
 
 \subsection{Evaluation metrics}
+\todo{when the internvention are not strong enough, the latent features collapses during training, this is because even tought z was informative, there not much gain in predictive power since the two distribution are almost the same.}
 
+\todo{Am I giving the right information the my decoder ?}
+
+\todo{VAE is learning smtg (latent don't collapse) but the model is not able to identify the right regime for each sample and the reconstruction loss don't go to zero, while it should in theory.}
 
 \section{Conclusion}\label{subsec:Conclusion}
 
