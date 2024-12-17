@@ -2,6 +2,7 @@ import random
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, Literal, Tuple
 
+import numpy as np
 import torch
 from beartype import beartype
 from lightning import LightningModule
@@ -32,12 +33,6 @@ class SCM_Reconstruction(ABC, LightningModule):
         self.beta = nn.Parameter(torch.tensor(beta), requires_grad=is_beta_VAE)
 
     @beartype
-    def gumbel_softmax_sample(self, logits: Tensor, temperature: float | int) -> Tensor:
-        gumbels = -torch.empty_like(logits).exponential_().log()  # Sample from Gumbel(0, 1)
-        gumbels = (logits + gumbels) / temperature  # Add Gumbel noise and divide by temperature
-        return F.softmax(gumbels, dim=2)
-
-    @beartype
     def forward(self, x: Tensor) -> Dict:
         """Return the predicted mu_hat of the gaussian model of the likelihood.
 
@@ -48,13 +43,15 @@ class SCM_Reconstruction(ABC, LightningModule):
             any: Predictions.
         """
         # sigmoid activation to get the probability of the latent variable
-        posterior = torch.sigmoid(self.encoder(x))
-        posterior = torch.stack([posterior, 1 - posterior], dim=2)
-        z_float = self.gumbel_softmax_sample(posterior, temperature=self.temperature)
-        z_hard = torch.argmax(z_float, dim=2)
+        logits = self.encoder(x)  # unormalized log probabilities
+        posterior = F.softmax(logits, dim=1)
+
+        z_float = F.gumbel_softmax(logits, tau=self.temperature, hard=False)
+        z_hard = F.gumbel_softmax(logits, tau=self.temperature, hard=True)
         # straight through gradient estimator
-        z = (z_hard - z_float[:, :, 1]).detach() + z_float[:, :, 1]
+        z = (z_hard - z_float).detach() + z_float
         mu_hat = self.decoder(z)
+
         return {"mu_hat": mu_hat, "posterior": posterior, "z": z}
 
     @beartype
@@ -81,6 +78,18 @@ class SCM_Reconstruction(ABC, LightningModule):
         self.log("val_reconstruction_loss", reco_loss)
         self.log("val_regularization_loss", regularization_loss)
         self.log("val_loss", loss)
+        sum = 0
+        sum_ordered = 0
+        topo_order = self.decoder.topological_orders
+        for i in range(x.shape[0]):
+            # target[i] is full of zeros
+            sum += (z[i, 1:].detach().cpu().numpy() == target[i].detach().cpu().numpy()).all()
+            sum_ordered += (
+                z[i, 1:][self.decoder.topological_orders].detach().cpu().numpy()
+                == target[i].detach().cpu().numpy()
+            ).all()
+        self.log("target accuracy", sum / x.shape[0])
+        self.log("target accuracy ordered", sum_ordered / x.shape[0])
         return loss
 
     def loss_function(self, mu, mu_hat, posterior) -> Tensor:
@@ -91,15 +100,17 @@ class SCM_Reconstruction(ABC, LightningModule):
         """
         # elementwise squared error
         # MSE loss between the input and the output
-        reco_loss = F.mse_loss(mu, mu_hat, reduction="sum")
-
+        reco_loss = F.mse_loss(mu, mu_hat, reduction="mean")
+        observational_density = self.trainer.datamodule.train_dataset.observational_density
+        prior = torch.full_like(posterior, fill_value=(1 - observational_density) / (posterior.shape[1] - 1))
+        prior[:, 0] = observational_density
         regularization_loss = 0
 
-        entropy = -posterior[:, :, 0] * torch.log(posterior[:, :, 0]) - posterior[:, :, 1] * torch.log(
-            posterior[:, :, 1]
-        )  # TODO check if this is correct
+        entropy = -torch.sum(posterior * torch.log(posterior), dim=1) + torch.sum(
+            posterior * torch.log(prior), dim=1
+        )
 
-        regularization_loss -= torch.sum(entropy[torch.isfinite(entropy)])
+        regularization_loss -= torch.mean(entropy[torch.isfinite(entropy)])
 
         loss = reco_loss + self.beta * regularization_loss
 

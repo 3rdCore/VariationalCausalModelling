@@ -92,7 +92,14 @@ class CMDecoder(abstract_model):
             variable = self.topological_orders[i]
             parents = self.graph()[:, variable].nonzero()[0]
 
-            input = torch.cat((x[:, parents], z[:, [0, self.topological_orders[i] + 1]]), dim=1)
+            input = torch.cat(
+                (
+                    x[:, parents],
+                    z[:, self.topological_orders[i] + 1].unsqueeze(1),
+                    1 - z[:, self.topological_orders[i] + 1].unsqueeze(1),
+                ),
+                dim=1,
+            )  # todo verify if that suffices
             x[:, self.topological_orders[i]] = mechanism(input).flatten()
 
         return x
