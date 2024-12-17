@@ -149,8 +149,8 @@ class SCM_Dataset(Dataset):
             self.mechanism(x, params_dict, order, one_hot)
             self.mechanism(mu, params_dict, order, one_hot)
 
-        x = normalize_tensor(x)
-        mu = normalize_tensor(mu)
+        # x = normalize_tensor(x)
+        # mu = normalize_tensor(mu)
 
         data_dict = {"x": x, "noise": noise, "mu": mu, "target": one_hot}
         return data_dict, params_dict
