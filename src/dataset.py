@@ -7,6 +7,7 @@ import networkx as nx
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from beartype import beartype
 from lightning import LightningDataModule
 from pytorch_lightning.utilities.seed import isolate_rng
@@ -21,9 +22,11 @@ class SCM:
         self,
         n_variables: int,
         density: float,
+        interventional_shift: float | int,
     ):
         self.adjacency_matrix = cd.rand.directed_erdos(n_variables, density).to_amat()[0]
         self.n_variables = n_variables
+        self.interventional_shift = interventional_shift
         self.params = self.sample_params()
 
     # call this class as a function
@@ -55,9 +58,11 @@ class SCM:
 
         sigmas = sample_weights_from_trunc_uniform((self.n_variables,))
 
-        int_mean_shift = 1 + sample_weights_from_trunc_uniform((self.n_variables + 1,))
+        int_mean_shift = self.interventional_shift + sample_weights_from_trunc_uniform(
+            (self.n_variables + 1,)
+        )
         int_mean_shift[0] = 0
-        int_cov_shift = 1 + sample_weights_from_trunc_uniform((self.n_variables + 1,))
+        int_cov_shift = self.interventional_shift + sample_weights_from_trunc_uniform((self.n_variables + 1,))
         int_cov_shift[0] = 0
 
         return {
@@ -143,6 +148,10 @@ class SCM_Dataset(Dataset):
         for order in topological_orders:
             self.mechanism(x, params_dict, order, one_hot)
             self.mechanism(mu, params_dict, order, one_hot)
+
+        x = normalize_tensor(x)
+        mu = normalize_tensor(mu)
+
         data_dict = {"x": x, "noise": noise, "mu": mu, "target": one_hot}
         return data_dict, params_dict
 
@@ -221,3 +230,9 @@ def sample_weights_from_trunc_uniform(size: tuple) -> Tensor:
     samples = torch.where(choices == 0, samples1, samples2)
 
     return samples.to(torch.float32)
+
+
+def normalize_tensor(x: Tensor) -> Tensor:
+    mean = x.mean(dim=1, keepdim=True)
+    std = x.std(dim=1, keepdim=True)
+    return (x - mean) / std
