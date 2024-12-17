@@ -19,7 +19,7 @@ task :
   encoder: ${encoder}
   decoder: ${decoder}
   lr: 1e-4
-  temperature: 1.0
+  temperature: 0.5
   beta: 1.0
   is_beta_VAE : False
 
@@ -27,13 +27,14 @@ SCM:
   _target_: dataset.SCM
   n_variables : 10
   density : 0.4
+  interventional_shift : 10.0
 
 train_dataset:
   _target_: dataset.SCM_Dataset
   generator : LinearANM
   n_samples: 10000
   scm: ${SCM}
-  observational_density: 0.5
+  observational_density: 0.1
   shift: 1.0
 
 val_dataset:
@@ -46,22 +47,22 @@ val_dataset:
 
 datamodule:
   _target_: dataset.SCMDataModule
-  batch_size: 64
+  batch_size: 128
   train_dataset: ${train_dataset}
   val_dataset: ${val_dataset}
 
 trainer:
-  max_epochs: 40
+  max_epochs: 100
   enable_progress_bar: True
   log_every_n_steps: 10
-  val_check_interval: 0.25
+  val_check_interval: 1
 
 
 encoder:
   _target_: model.CMEncoder
   input_dim: ${SCM.n_variables}
   hidden_dim: 64
-  latent_dim: ${SCM.n_variables}
+  latent_dim: "${ast_eval:'${SCM.n_variables}+1'}"
   n_layers: 3
   activation: relu
 
@@ -78,6 +79,6 @@ callbacks:
   early_stopping:
     _target_: lightning.pytorch.callbacks.EarlyStopping
     monitor: val_loss
-    patience: 10
+    patience: 1000
     mode: min
     verbose: True
