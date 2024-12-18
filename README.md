@@ -1,8 +1,9 @@
-# Autoregressive Variational Autoencoder for Causal Modelling
+# Autoregressive Variational Autoencoder for Causal Modelling 🚀
 
 ## Description
 
-This repository contains the implementation of an autoregressive VAE with discrete latent variables.
+This repository contains the implementation of an autoregressive VAE with discrete latent variables. 🧠
+
 ## Installation
 
 1. Install the dependencies:
@@ -11,9 +12,9 @@ This repository contains the implementation of an autoregressive VAE with discre
     pip install -r requirements.txt
     ```
 
-2. That's it. You're ready to go!
+2. That's it. You're ready to go! 🎉
 
-You can launch the experiments super easily thanks to Lightning and Hydra. The configuration used in the report in the `src/configs` folder. To launch an experiment, you can use the following command:
+You can launch the experiments super easily thanks to Lightning ⚡ and Hydra 🐍. The configuration used in the report is in the `src/configs` folder. To launch an experiment, you can use the following command:
 
 ```bash
 python src/train.py
@@ -42,4 +43,4 @@ Set up the pre-commit hooks:
     pre-commit install
     ```
 
-    Make sure you have the `.pre-commit-config.yaml` file set up in your project root.
+    Make sure you have the `.pre-commit-config.yaml` file set up in your project root. ✅
