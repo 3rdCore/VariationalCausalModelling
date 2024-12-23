@@ -18,8 +18,8 @@ task :
   _target_: task.SCM_Reconstruction
   encoder: ${encoder}
   decoder: ${decoder}
-  lr: 1e-4
-  temperature: 0.5
+  lr: 1e-3
+  temperature: 0.4
   beta: 1.0
   is_beta_VAE : False
 
@@ -55,7 +55,7 @@ trainer:
   max_epochs: 100
   enable_progress_bar: True
   log_every_n_steps: 10
-
+  limit_train_batches: 0.1
 
 encoder:
   _target_: model.CMEncoder
@@ -68,7 +68,7 @@ encoder:
 decoder:
   _target_: model.CMDecoder
   input_dim: ${SCM.n_variables}
-  hidden_dim: 64
+  hidden_dim: 32
   n_layers: 3
   activation: relu
   graph: ${SCM}
@@ -81,3 +81,9 @@ callbacks:
     patience: 1000
     mode: min
     verbose: True
+  cyclical_annealing:
+    _target_: task.CyclicalAnnealingCallback
+    max_value: 1.0
+    min_value: 0.0
+    period: 10
+    max_cycle: 5

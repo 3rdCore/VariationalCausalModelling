@@ -1,3 +1,4 @@
+import math
 import random
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterable, Literal, Tuple
@@ -5,7 +6,7 @@ from typing import Any, Dict, Iterable, Literal, Tuple
 import numpy as np
 import torch
 from beartype import beartype
-from lightning import LightningModule
+from lightning import Callback, LightningModule
 from torch import Tensor, nn
 from torch.nn import functional as F
 
@@ -30,7 +31,9 @@ class SCM_Reconstruction(ABC, LightningModule):
         self.encoder = encoder
         self.decoder = decoder
         self.temperature = temperature
-        self.beta = nn.Parameter(torch.tensor(beta), requires_grad=is_beta_VAE)
+        self.is_beta_VAE = is_beta_VAE
+        # self.beta = nn.Parameter(torch.tensor(beta), requires_grad=is_beta_VAE)
+        self.beta = beta
 
     @beartype
     def forward(self, x: Tensor) -> Dict:
@@ -44,7 +47,7 @@ class SCM_Reconstruction(ABC, LightningModule):
         """
         # sigmoid activation to get the probability of the latent variable
         logits = self.encoder(x)  # unormalized log probabilities
-        posterior = F.softmax(logits, dim=1)
+        posterior = F.softmax(logits / self.temperature, dim=1)
 
         z_float = F.gumbel_softmax(logits, tau=self.temperature, hard=False)
         z_hard = F.gumbel_softmax(logits, tau=self.temperature, hard=True)
@@ -61,10 +64,11 @@ class SCM_Reconstruction(ABC, LightningModule):
         mu_hat = dict["mu_hat"]
         posterior = dict["posterior"]
         z = dict["z"]
-        reco_loss, regularization_loss, loss = self.loss_function(mu, mu_hat, posterior)
+        reco_loss, regularization_loss, loss = self.loss_function(x, mu_hat, posterior)
         self.log("train_reconstruction_loss", reco_loss)
         self.log("train_regularization_loss", regularization_loss)
         self.log("train_loss", loss)
+        self.log("beta", self.beta)
         return loss
 
     @beartype
@@ -74,22 +78,16 @@ class SCM_Reconstruction(ABC, LightningModule):
         mu_hat = dict["mu_hat"]
         posterior = dict["posterior"]
         z = dict["z"]
-        reco_loss, regularization_loss, loss = self.loss_function(mu, mu_hat, posterior)
+        reco_loss, regularization_loss, loss = self.loss_function(x, mu_hat, posterior)
         self.log("val_reconstruction_loss", reco_loss)
         self.log("val_regularization_loss", regularization_loss)
         self.log("val_loss", loss)
         sum = 0
-        sum_ordered = 0
-        topo_order = self.decoder.topological_orders
         for i in range(x.shape[0]):
             # target[i] is full of zeros
             sum += (z[i, 1:].detach().cpu().numpy() == target[i].detach().cpu().numpy()).all()
-            sum_ordered += (
-                z[i, 1:][self.decoder.topological_orders].detach().cpu().numpy()
-                == target[i].detach().cpu().numpy()
-            ).all()
-        self.log("target accuracy", sum / x.shape[0])
-        self.log("target accuracy ordered", sum_ordered / x.shape[0])
+
+        self.log("target accuracy", sum / x.shape[0], prog_bar=True)
         return loss
 
     def loss_function(self, mu, mu_hat, posterior) -> Tensor:
@@ -118,3 +116,25 @@ class SCM_Reconstruction(ABC, LightningModule):
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.hparams.lr)
+
+
+class CyclicalAnnealingCallback(Callback):
+    def __init__(self, max_value, min_value, period, max_cycle):
+        super().__init__()
+        self.max_value = max_value
+        self.min_value = min_value
+        self.period = period
+        self.max_cycle = max_cycle
+
+    def on_train_epoch_start(self, trainer, pl_module):
+        # linear increase from min to max in the first half of the period
+        # stay at max in the second half of the period
+        current_epoch = trainer.current_epoch % self.period
+        current_cycle = trainer.current_epoch // self.period
+        scale_factor = min(1, current_epoch / (self.period / 2))
+
+        new_beta = self.min_value + (self.max_value - self.min_value) * scale_factor
+
+        # new_beta= nn.Parameter(torch.tensor(new_beta), requires_grad=pl_module.is_beta_VAE)
+        if current_cycle < self.max_cycle:
+            setattr(pl_module, "beta", new_beta)
