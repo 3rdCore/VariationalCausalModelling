@@ -1,14 +1,14 @@
 # Fdb version 4
-["bibtex main"] 1734316723.23671 "main.aux" "main.bbl" "main" 1734316959.33482 0
-  "./icml2018.bst" 1734117824 27147 11970ec9d69705ed6a2b168055aaee45 ""
-  "./references.bib" 1734127357 13293 adde6fc92336e3ce33c3d3e645838660 ""
-  "main.aux" 1734316958 1010 739bcfc50a97fa1eafb226cb8ed6706c "pdflatex"
+["bibtex main"] 1734979823.14742 "main.aux" "main.bbl" "main" 1734979825.56697 0
+  "./icml2018.bst" 1734375046 27146 0bcbc907a3d06db63404eb67ccc4a315 ""
+  "./references.bib" 1734979761 15853 f43338cce1ffdcdeae698ad1c694f04e ""
+  "main.aux" 1734979825 4519 11a8842057ca846787d32be4db1c6a91 "pdflatex"
   (generated)
   "main.bbl"
   "main.blg"
   (rewritten before read)
-["pdflatex"] 1734316957.31065 "/home/mila/t/tom.marty/IFT6269/project/report/main.tex" "main.pdf" "main" 1734316959.33568 0
-  "/home/mila/t/tom.marty/IFT6269/project/report/main.tex" 1734316956 14309 1737072b9458ce490a88c2abe74601f8 ""
+["pdflatex"] 1734979823.34075 "/home/mila/t/tom.marty/IFT6269/project/VariationalCausalModelling/paper/report/main.tex" "main.pdf" "main" 1734979825.56766 0
+  "/home/mila/t/tom.marty/IFT6269/project/VariationalCausalModelling/paper/report/main.tex" 1734979568 28422 a7f28915418d25b5fd4310386c8ea550 ""
   "/home/mila/t/tom.marty/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/home/mila/t/tom.marty/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/home/mila/t/tom.marty/texlive/texmf-dist/fonts/tfm/adobe/courier/pcrr7t.tfm" 1136768653 960 379cc0019370a9e0208a0a3f949f847a ""
@@ -57,6 +57,7 @@
   "/home/mila/t/tom.marty/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmmib10.pfb" 1248133631 36912 b448ef9ad9d7228ec3c6e71005136d55 ""
   "/home/mila/t/tom.marty/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb" 1248133631 35752 024fb6c41858982481f6968b5fc26508 ""
   "/home/mila/t/tom.marty/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr5.pfb" 1248133631 31809 8670ca339bf94e56da1fc21c80635e2a ""
+  "/home/mila/t/tom.marty/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb" 1248133631 32734 69e00a6b65cedb993666e42eedb3d48f ""
   "/home/mila/t/tom.marty/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb" 1248133631 32762 224316ccc9ad3ca0423a14971cfa7fc1 ""
   "/home/mila/t/tom.marty/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr9.pfb" 1248133631 33993 9b89b85fd2d9df0482bd47194d1d3bf3 ""
   "/home/mila/t/tom.marty/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb" 1248133631 32569 5e5ddc8df908dea60932f3c484a54c0d ""
@@ -176,13 +177,16 @@
   "/home/mila/t/tom.marty/texlive/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1733177944 5476137 43c0230dd941424b41e064ab804b4b07 ""
   "/home/mila/t/tom.marty/texlive/texmf-var/web2c/pdftex/pdflatex.fmt" 1733178204 3343746 ffe13feaa6f4714a86a7ac368b119e02 ""
   "/home/mila/t/tom.marty/texlive/texmf.cnf" 1733177921 614 6ac0f7114afdf26402b4fc286485d5f9 ""
-  "fancyhdr.sty" 1734117823 20521 e5d13d98d57bd53d4fed3aa61bd29c86 ""
-  "icml2018_ift6269.sty" 1734118766 27050 a79089f1d2da4c29e2ba26a20fb2d636 ""
-  "images/DAG.pdf" 1734117822 94875 56c02f8b0fdacc2c87edb44493736b42 ""
-  "main.aux" 1734316958 1010 739bcfc50a97fa1eafb226cb8ed6706c "pdflatex"
-  "main.bbl" 1734316723 720 00f2fe19c4195d945cc966785da0a2b1 "bibtex main"
-  "main.out" 1734316958 0 d41d8cd98f00b204e9800998ecf8427e "pdflatex"
-  "main.tex" 1734316956 14309 1737072b9458ce490a88c2abe74601f8 ""
+  "fancyhdr.sty" 1734375046 20513 c218706a0007a151d0bea8842e5f4187 ""
+  "icml2018_ift6269.sty" 1734375046 26950 33d59f8d0b79dc1f6837a17fe5b11e47 ""
+  "images/DAG.pdf" 1734374990 94875 56c02f8b0fdacc2c87edb44493736b42 ""
+  "images/architecture.pdf" 1734452574 80040 623575fa57154e43920a715083959c94 ""
+  "images/architecture_decoder.pdf" 1734455100 50173 424d72ce42a265884007b4b86db41f7c ""
+  "images/assumption.pdf" 1734541120 98576 9db73dfffa57b8b6680069de54753542 ""
+  "main.aux" 1734979825 4519 11a8842057ca846787d32be4db1c6a91 "pdflatex"
+  "main.bbl" 1734979823 3239 79ab84bfc1318f102b4499fb2f31b5f5 "bibtex main"
+  "main.out" 1734979824 0 d41d8cd98f00b204e9800998ecf8427e "pdflatex"
+  "main.tex" 1734979568 28422 a7f28915418d25b5fd4310386c8ea550 ""
   (generated)
   "main.aux"
   "main.log"

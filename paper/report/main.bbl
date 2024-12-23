@@ -1,19 +1,58 @@
-\begin{thebibliography}{2}
+\begin{thebibliography}{9}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
   \providecommand{\doi}[1]{doi: #1}\else
   \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
 
-\bibitem[Mahajan et~al.(2024)Mahajan, Gladrow, Hilmkil, Zhang, and Scetbon]{mahajan_zero-shot_2024}
-Mahajan, D., Gladrow, J., Hilmkil, A., Zhang, C., and Scetbon, M.
-\newblock Zero-{Shot} {Learning} of {Causal} {Models}, October 2024.
-\newblock URL \url{http://arxiv.org/abs/2410.06128}.
-\newblock arXiv:2410.06128.
+\bibitem[Brouillard et~al.(2020)Brouillard, Lachapelle, Lacoste, Lacoste-Julien, and Drouin]{brouillard2020differentiablecausaldiscoveryinterventional}
+Brouillard, P., Lachapelle, S., Lacoste, A., Lacoste-Julien, S., and Drouin, A.
+\newblock Differentiable causal discovery from interventional data, 2020.
+\newblock URL \url{https://arxiv.org/abs/2007.01754}.
+
+\bibitem[Chevalley et~al.(2024)Chevalley, Schwab, and Mehrjou]{chevalley2024derivingcausalordersinglevariable}
+Chevalley, M., Schwab, P., and Mehrjou, A.
+\newblock Deriving causal order from single-variable interventions: Guarantees and algorithm, 2024.
+\newblock URL \url{https://arxiv.org/abs/2405.18314}.
+
+\bibitem[Faria et~al.(2022)Faria, Martins, and Figueiredo]{faria_differentiable_2022}
+Faria, G. R.~A., Martins, A., and Figueiredo, M. A.~T.
+\newblock Differentiable {Causal} {Discovery} {Under} {Latent} {Interventions}.
+\newblock In \emph{Proceedings of the {First} {Conference} on {Causal} {Learning} and {Reasoning}}, pp.\  253--274. PMLR, June 2022.
+\newblock URL \url{https://proceedings.mlr.press/v177/faria22a.html}.
+\newblock ISSN: 2640-3498.
+
+\bibitem[Jang et~al.(2017)Jang, Gu, and Poole]{jang2017categoricalreparameterizationgumbelsoftmax}
+Jang, E., Gu, S., and Poole, B.
+\newblock Categorical reparameterization with gumbel-softmax, 2017.
+\newblock URL \url{https://arxiv.org/abs/1611.01144}.
+
+\bibitem[Kingma \& Welling(2022)Kingma and Welling]{kingma2022autoencodingvariationalbayes}
+Kingma, D.~P. and Welling, M.
+\newblock Auto-encoding variational bayes, 2022.
+\newblock URL \url{https://arxiv.org/abs/1312.6114}.
+
+\bibitem[Komanduri et~al.(2022)Komanduri, Wu, Huang, Chen, and Wu]{SCMVAE}
+Komanduri, A., Wu, Y., Huang, W., Chen, F., and Wu, X.
+\newblock { SCM-VAE: Learning Identifiable Causal Representations via Structural Knowledge }.
+\newblock In \emph{2022 IEEE International Conference on Big Data (Big Data)}, pp.\  1014--1023, Los Alamitos, CA, USA, December 2022. IEEE Computer Society.
+\newblock \doi{10.1109/BigData55660.2022.10021114}.
+\newblock URL \url{https://doi.ieeecomputersociety.org/10.1109/BigData55660.2022.10021114}.
+
+\bibitem[Lorch et~al.(2022)Lorch, Sussex, Rothfuss, Krause, and Schölkopf]{lorch2022amortizedinferencecausalstructure}
+Lorch, L., Sussex, S., Rothfuss, J., Krause, A., and Schölkopf, B.
+\newblock Amortized inference for causal structure learning, 2022.
+\newblock URL \url{https://arxiv.org/abs/2205.12934}.
 
 \bibitem[Pearl(2009)]{Pearl_2009}
 Pearl, J.
 \newblock \emph{Causality}.
 \newblock Cambridge University Press, 2 edition, 2009.
+
+\bibitem[Yang et~al.(2021)Yang, Liu, Chen, Shen, Hao, and Wang]{CausalVAE}
+Yang, M., Liu, F., Chen, Z., Shen, X., Hao, J., and Wang, J.
+\newblock Causalvae: Disentangled representation learning via neural structural causal models.
+\newblock In \emph{2021 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)}, pp.\  9588--9597, 2021.
+\newblock \doi{10.1109/CVPR46437.2021.00947}.
 
 \end{thebibliography}

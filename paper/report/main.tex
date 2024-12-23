@@ -43,37 +43,37 @@
 \begin{document}
 
 \twocolumn[
-\icmltitle{Autoregressive Variational Auto-Encoder for Causal Modeling}
+    \icmltitle{Autoregressive Variational Auto-Encoder for Causal Modeling}
 
-% It is OKAY to include author information, even for blind
-% submissions: the style file will automatically remove it for you
-% unless you've provided the [accepted] option to the icml2018
-% package.
+    % It is OKAY to include author information, even for blind
+    % submissions: the style file will automatically remove it for you
+    % unless you've provided the [accepted] option to the icml2018
+    % package.
 
-% List of affiliations: The first argument should be a (short)
-% identifier you will use later to specify author affiliations
-% Academic affiliations should list Department, University, City, Region, Country
-% Industry affiliations should list Company, City, Region, Country
+    % List of affiliations: The first argument should be a (short)
+    % identifier you will use later to specify author affiliations
+    % Academic affiliations should list Department, University, City, Region, Country
+    % Industry affiliations should list Company, City, Region, Country
 
-% You can specify symbols, otherwise they are numbered in order.
-% Ideally, you should not use this facility. Affiliations will be numbered
-% in order of appearance and this is the preferred way.
+    % You can specify symbols, otherwise they are numbered in order.
+    % Ideally, you should not use this facility. Affiliations will be numbered
+    % in order of appearance and this is the preferred way.
 
-\begin{icmlauthorlist}
-\icmlauthor{Tom Marty}{udem,mi}
-\end{icmlauthorlist}
+    \begin{icmlauthorlist}
+        \icmlauthor{Tom Marty}{udem,mi}
+    \end{icmlauthorlist}
 
-\icmlaffiliation{udem}{Université de Montréal, Québec, Canada}
-\icmlaffiliation{mi}{Mila, Quebec AI Institute}
+    \icmlaffiliation{udem}{Université de Montréal, Québec, Canada}
+    \icmlaffiliation{mi}{Mila, Quebec AI Institute}
 
-\icmlcorrespondingauthor{Tom Marty}{tom.marty@mila.quebec}
+    \icmlcorrespondingauthor{Tom Marty}{tom.marty@mila.quebec}
 
-% You may provide any keywords that you
-% find helpful for describing your paper; these are used to populate
-% the "keywords" metadata in the PDF but will not be shown in the document
-\icmlkeywords{Machine Learning, ICML}
+    % You may provide any keywords that you
+    % find helpful for describing your paper; these are used to populate
+    % the "keywords" metadata in the PDF but will not be shown in the document
+    \icmlkeywords{Machine Learning, ICML}
 
-\vskip 0.3in
+    \vskip 0.3in
 ]
 
 % this must go after the closing bracket ] following \twocolumn[ ...
@@ -88,137 +88,301 @@
 
 \begin{abstract}
 
-Causal modeling is an active area of research that consist in inferring the functional components of a causal model from multi-intervention data. Previous work usually assume that the correspondence between samples and  interventional regimes is known, which is not always a realistic setting. Without this information, modeling these causal mechanisms poses significant challenges because of the inherent confounding bias that arises from the different interventional datasets considered. In this project, we propose to use a Variational auto-encoder with discrete latent in order to estimate the unseen interventional regimes required to deconfound the estimation of the independent causal mechanisms.
+    Causal modeling is an active area of research that consist in inferring the
+    functional components of a causal model from multi-intervention data. Previous
+    work usually assume that the correspondence between samples and interventional
+    regimes is known, which is not always a realistic setting. Without this
+    information, modeling these causal mechanisms poses significant challenges due
+    to the inherent confounding bias that arises from the different possible
+    interventions in the data. In this project, we propose to use a Variational
+    auto-encoder with discrete latent in order to recover the unseen interventional
+    regimes required to deconfound the estimation of the independent causal
+    mechanisms.
 
 \end{abstract}
+
+\paragraph{Disclaimer} This report is an original research direction that the author wanted to
+explore, and is not directly based on any existing work. The results presented
+in this report are preliminary, and will be further developed in the next
+iteration.
+
 \section{Background}\label{subsec:background}
 
-Firstly, we start this report by introducing some of the basic concepts that will be used throughout the report. We will start by introducing the concept of Structural Causal Models (SCM), the notion of intervention on these structure, then quickly present the usual assumptions made in the causal modeling literature. If the reader is already familiar with these concepts, we recommend skipping directly to Section \ref{subsec:setting}.
+We will start by introducing some of the basic concepts that will be used
+throughout the report. Firstly, We will introduce the concept of Structural
+Causal Models (SCM), the notion of intervention on these structure, then
+quickly present the usual assumptions made in the causal modeling literature.
+If the reader is already familiar with these concepts, we recommend skipping
+directly to Section \ref{subsec:setting}.
+
 \subsection{Structural Causal Models}
 
-A Structural Causal Model (SCM) mathematically formalize the cause-effect relationships between the different random variables in a system. Precisely, an SCM is a triplet $\mathcal{S}(\mathcal{G},\mathbb{P}_{\boldsymbol{\epsilon}}, \mathcal{F})$ that defines the data-generating process of $N$ endogenous variables $\mathcal{X} = \left\{ X_1, X_2, \cdots, X_N \right\}$ and $N$ independent exogenous noise terms $\boldsymbol{\epsilon} = \left\{ \epsilon_1, \epsilon_2, \cdots, \epsilon_N \right\}$. It is composed of three terms :
+A Structural Causal Model (SCM) mathematically formalize the cause-effect
+relationships between the different random variables in a system. Precisely, an
+SCM is a triplet $\mathcal{S}(\mathcal{G},\mathbb{P}_{\boldsymbol{\epsilon}},
+    \mathcal{F})$ that defines the data-generating process of $N$ endogenous
+variables $\mathcal{X} = \left\{ X_1, X_2, \cdots, X_N \right\}$ and $N$
+independent exogenous noise terms $\boldsymbol{\epsilon} = \left\{ \epsilon_1,
+    \epsilon_2, \cdots, \epsilon_N \right\}$. It is composed of three terms :
 \begin{itemize}
-    \item A Directed Acyclic Graph \footnote{*commonly called a DAG} $\mathcal{G} = \left( \mathcal{V}, \mathcal{E} \right)$ that represents the causal structure of the model. Each node $X_i$ in the graph represent a random variable and each edge $X_i \rightarrow X_j$ represent a direct causal relationship between the two variables.
-    \item A distribution over $N$ independent exogenous noise terms $\boldsymbol{\epsilon} = \left\{ \epsilon_1, \epsilon_2, \cdots, \epsilon_N \right\}$ that represent the unobserved factors influencing the endogenous variables.
-    \item A set of $N$ mechanism $\mathcal{F} = \left\{ f_1, f_2, \cdots, f_N \right\}$ that represent the functional form of the causal relationships between the variables in the model. Each variable $X_i$ is a function of its parents $\text{Pa}(X_i)$ defined by the DAG and some exogenous noise $\epsilon_i$ sampled from $\mathbb{P}_{\boldsymbol{\epsilon_i}}$ :
-    \begin{equation}
-    X_i  = f_i(\text{Pa}(X_i), \epsilon_i)  \quad \epsilon_i \sim \mathbb{P}_{\epsilon_i}
-    \end{equation}
+    \item A Directed Acyclic Graph \footnote{*commonly called a DAG} $\mathcal{G} =
+              \left( \mathcal{V}, \mathcal{E} \right)$ that represents the causal structure
+          of the model. Each node $X_i$ in the graph represent a random variable and each
+          edge $X_i \rightarrow X_j$ represent a direct causal relationship between the
+          two variables.
+    \item A distribution over $N$ independent exogenous noise terms
+          $\boldsymbol{\epsilon} = \left\{ \epsilon_1, \epsilon_2, \cdots, \epsilon_N
+              \right\}$ that represent the unobserved factors influencing the endogenous
+          variables.
+    \item A set of $N$ mechanism $\mathcal{F} = \left\{ f_1, f_2, \cdots, f_N \right\}$
+          that represent the functional form of the causal relationships between the
+          variables in the model. Each variable $X_i$ is a function of its parents
+          $\text{Pa}(X_i)$ defined by the DAG and some exogenous noise $\epsilon_i$
+          sampled from $\mathbb{P}_{\boldsymbol{\epsilon_i}}$ :
+          \begin{equation}
+              X_i  = f_i(\text{Pa}(X_i), \epsilon_i)  \quad \epsilon_i \sim \mathbb{P}_{\epsilon_i}
+          \end{equation}
 \end{itemize}
 
-This formulation induces a set of conditional probability distributions $p(X_i | \text{Pa}(X_i))$ such that the joint distribution over the variables $X$ can be expressed as a product of these conditional distributions:
-$$p(X) = \prod_{i = 1}^N p(X_i | \text{Pa}(X_i)).$$
-For the rest of this report, we will consider the variables $X_i$ and $\epsilon_i$ to be univariate.
+This formulation induces a set of conditional probability distributions $p(X_i
+    | \text{Pa}(X_i))$ such that the joint distribution over the variables $X$ can
+be expressed as a product of these conditional distributions: $$p(X) = \prod_{i
+        = 1}^N p(X_i | \text{Pa}(X_i)).$$ For the rest of this report, we will consider
+the variables $X_i$ and $\epsilon_i$ to be univariate.
 
 \subsection{interventions and targets}
-An important concept in the field of Causality is the notion of \textbf{intervention}. An intervention $\mathcal{I}$ is a modification of the data-generating process of a causal model $\mathcal{S}$ that consist in modifying a set of mechanisms $f_i \in \mathcal{F}_{\mathcal{I}}$ :
+An important concept in the field of Causality is the notion of
+\textbf{intervention}. An intervention $\mathcal{I}$ is a modification of the
+data-generating process of a causal model $\mathcal{S}$ that consist in
+modifying a set of mechanisms $f_k \in \mathcal{F}_{\mathcal{I}}$ :
 
 \begin{equation}
-    f_i(\text{Pa}(X_i), \epsilon_i) \rightarrow f_i^{\mathcal{I}}(\text{Pa}(X_i), \epsilon_i) \quad \forall i \in \mathcal{F}_{\mathcal{I}}
+    f_k(\text{Pa}(X_i), \epsilon_i) \rightarrow f_k^{\mathcal{I}}(\text{Pa}(X_i), \epsilon_i) \quad \forall k \in \mathcal{F}_{\mathcal{I}}
 \end{equation}
+As defined, an intervention can possibly affect multiple mechanisms in the system.
 For a given intervention, the \textbf{targets} refers to the set of variables in the causal model whose mechanisms are altered by the intervention. There are different types of interventions that can be considered, we usually consider \textit{single} intervention where the set $\mathcal{F}_{\mathcal{I}}$ is reduced to a single altered mechanism, we refer the reader to \citet{Pearl_2009} for a more detailed discussion on interventions.
 
 \paragraph{interventional regime}
-Another important notion is the notion of interventional regime, which caracterise a set of samples $D_{\mathcal{I}_k}$  that were generated under the same intervention $\mathcal{I}_k$. Additionally, when no intervention is applied, the data is said to be generated under the observational regime $D_{\mathcal{O}}$.
+Another important notion is the notion of interventional regime, which
+caracterise a set of samples $D_{\mathcal{I}_k}$ that were generated under the
+same intervention $\mathcal{I}_k$. Additionally, when no intervention is
+applied, the data is said to be generated under the observational regime
+$\mathcal{O}$.
 
-\paragraph{interventional Faithfulness} First introduced by \citet{chevalley2024derivingcausalordersinglevariable}, this assumption guarantees that any valid intervention $\mathcal{I}_k$ should significantly alter the distribution of the downstream nodes of the intervened mechanism such that inversely inferring the possible intervention from the downstream nodes is possible.
+\paragraph{interventional Faithfulness} First introduced by \citet{chevalley2024derivingcausalordersinglevariable},
+this assumption guarantees that any valid intervention $\mathcal{I}_k$ should
+significantly alter the distribution of the downstream nodes of the intervened
+mechanism such that inversely inferring the possible intervention from the
+downstream nodes is possible.
 
 \section{Motivation and Setting}\label{subsec:setting}
 
-In causal modeling, given a dataset $\mathcal{D}$ generated from an SCM $\mathcal{S}= (\mathcal{G}, \mathbb{P}_{\boldsymbol{\epsilon}}, \mathcal{F})$, the goal is usually to retrieve full knowledge about $\mathcal{S}$. In \textit{Causal Discovery}, the challenge is to infer the graph $\mathcal{G}$, which is a particularily harduous task because of the inherent difficulties arising from discrete optimization (a graph a is discrete structure) under constraint (e.g. Acyclicity). In \textit{Causal Modelling}, the goal is to learn the mechanisms $\mathcal{F}$. Depending on what is to be learned, different assumptions have to be made on the data-generation process in order to identify the causal model. These assumptions can be summarized as follows:
+In causal modeling, given a dataset $\mathcal{D}$ generated from a
+partially-known SCM $\mathcal{S}= (\mathcal{G},
+    \mathbb{P}_{\boldsymbol{\epsilon}}, \mathcal{F})$, the goal is usually to
+retrieve full knowledge about $\mathcal{S}$. On the one hand, in \textit{Causal
+    Discovery}, the challenge is to infer the graph $\mathcal{G}$, which is a
+particularly arduous task because of the inherent difficulties arising from
+discrete optimization (a graph a is discrete structure) under constraint (e.g.
+acyclicity). On the other hand, in \textit{Causal Modelling}, the goal is to
+learn the mechanisms $\mathcal{F}$. Depending on what is to be learned,
+different assumptions have to be made on the data-generation process in order
+to identify the causal model. These assumptions can be summarized as follows:
 \begin{enumerate}
     \item unknown/known interventional regime
     \item unknown/known single/multiple interventional targets
     \item unknown/known graph structure
-    \item restricting assumptions on the mechanisms (e.g. Additive noise, linear mechanisms, gaussian noise...)
+    \item restricting assumptions on the mechanisms (e.g. Additive noise, linear
+          mechanisms, gaussian noise...)
 \end{enumerate}
 
-In this project, we will consider a slightly unusual setting : We consider a dataset $\mathcal{D} = \left\{ D_{\mathcal{O}},D_{I_1}, \cdots, D_{I_N} \right\}$ composed of samples generated under $N$ different interventional regimes. Each regime is obtained by performing a soft intervention on a single mechanism. Each mechanism is intervened only once, meaning that there are $N$ mechanisms and $N$ corresponding interventions. Finally, we consider \textbf{that the graph $\mathcal{G}$ is known}. We discuss the relevance of such a specific setting in Section \ref{subsec:Relevance}. Similar to \cite{faria_differentiable_2022}, the subtlety of our setting is that the data is completely shuffled such that for each sample $X \in \mathcal{D}$ neither the interventional regime it belongs to nor the interventional target of this regime is known.
+In this project, we will consider a slightly unusual setting : We consider a
+dataset $\mathcal{D} = \left\{ D_{\mathcal{O}},D_{I_1}, \cdots, D_{I_N}
+    \right\}$ composed of samples generated under $N+1$ regimes containing the
+observational regime $D_{\mathcal{O}}$ and $N$ interventional regimes
+$D_{I_k}$. Each regime is obtained by performing a soft intervention on a
+single mechanism. Each mechanism is intervened only once, meaning that there
+are $N$ mechanisms and $N$ corresponding interventions. We discuss the
+relevance of such a specific setting in Section \ref{subsec:Relevance}.
+Finally, we consider \textbf{that the graph $\mathcal{G}$ is known}. This
+assumption is not absurd since the graph structure can often be obtained
+beforehand using expert domain knowledge or by running a causal discovery
+algorithm. Similar to \cite{faria_differentiable_2022}, the subtlety of our
+setting is that the data is completely shuffled such that for each sample $X
+    \in \mathcal{D}$ neither the interventional regime it belongs to nor the
+interventional target of this regime is known.
 \paragraph{Goal}The objective of the problem is two-fold :
 \begin{itemize}
-    \item Cluster the samples $X_i \in \mathcal{D}$ according to the different regimes and identify which one correspond to the observational regime $D_{\mathcal{O}}$.
-    \item Model the mechanisms $f(X_i | \text{Pa}(X_i))$ under each of the interventional regime $D_{I_k}$.
+    \item Cluster the samples $X_i \in \mathcal{D}$ according to the different regimes
+          and identify which one correspond to the observational regime
+          $D_{\mathcal{O}}$.
+    \item Model the mechanisms $f(X_i | \text{Pa}(X_i))$ under each of the interventional
+          regime $D_{I_k}$.
 \end{itemize}
-We treat this problem as a latent-variable model where the latent variables encode the interventional regime of each input sample. Given that we usually don't know the functionnal form of the mechanisms of the causal model, the posterior distribution over the latent variables is most of the time intractable. For this reason, we decided to use a Variational Auto-encoder (VAE) to approximate the posterior distribution over the latent variables. We refer the reader to Section \ref{subsec:Method} for a more detailed explanation of the method. In Figure \ref{fig:DAG}, we illustrate the data-generation process.
+We treat this problem as a latent-variable model where the latent variables encode the interventional regime for the input sample. Given that we usually don't know the functionnal form of the mechanisms of the true causal model, the posterior distribution over the latent variables is most of the time intractable. For this reason, we decided to use a variational Auto-Encoder (VAE) to approximate the posterior distribution over an arbitrary variational family. We refer the reader to Section \ref{subsec:Method} for a more detailed explanation of the method. In Figure \ref{fig:DAG}, we illustrate the data-generation process.
 \begin{figure}
     \centering
-        \includegraphics[width=0.25\textwidth]{images/DAG.pdf}
-        \caption{Graphical model of the data-generation process augmented with the unobserved latent variables. $I_k$ represent the interventional regime and the $z_i \; i \in [1,N]$ are boolean variable that encode the state of each mechanism $p(X_i | \text{Pa}(X_i))$}.
-        \label{fig:DAG}
-    \end{figure}
-Usually, the challenge in causal modelling lies in the inference of the causal structure. Even with a known graph in this case, we argue that infering the mechanisms remains challenging because of the unobserved confounding regime that governs these mechanisms. Indeed, straightforward maximisation of data-loglikelihood will yield probabilistic models $\hat{p_{obs}}(X_i | \text{Pa}(X_i))$ that will be biaised by samples for which the true mechanism $p_{obs}(X_i | \text{Pa}(X_i))$ was in fact not in its observational form : $p_{obs} \rightarrow p_{int}$.
-In order to unbiaise this estimate, we therefore need to account for these possible interventions by also modeling and estimating the state of each mechanism for the sample $X_i$ using some categorical variable. Recalling that data-points sampled under the same interventional regime we obtained using the same set of mechanisms, we can instead aim to encode the regime itself in the latent variable, in an attempt to encoder this information more compactly.
+    \includegraphics[width=0.25\textwidth]{images/DAG.pdf}
+    \caption{Graphical model of the data-generation process augmented with the unobserved latent variables. $I_k$ represent the interventional regime and the $z_i \; i \in [1,N]$ are boolean variable that encode the state of each mechanism $p(X_i | \text{Pa}(X_i))$}.
+    \label{fig:DAG}
+\end{figure}
+
+As we mentioned previously, usually the challenge in causal modelling lies in
+the inference of the causal structure
+\cite{brouillard2020differentiablecausaldiscoveryinterventional,
+    lorch2022amortizedinferencecausalstructure}. Even with a known graph in this
+case, we argue that inferring the mechanisms remains challenging because of the
+unobserved confounding regime that governs these mechanisms. Indeed,
+straightforward maximization of data-loglikelihood will yield probabilistic
+models $\hat{p_{obs}}(X_i | \text{Pa}(X_i))$ that will be biaised by samples
+for which the true mechanism $p_{obs}(X_i | \text{Pa}(X_i))$ was in fact not in
+its observational state : $p_{obs} \rightarrow p_{int}$. In order to unbiaise
+this estimate, we therefore need to account for these possible interventions by
+also modeling and estimating the state of each mechanism for the sample $X_i$
+using some categorical variable. Recalling that data-points sampled under the
+same interventional regime were obtained using the same set of mechanisms, we
+can instead aim to encode the regime itself in the latent variable, in an
+attempt to encoder this information more compactly.
 \subsection{Necessary assumption for identification}\label{subsec:Relevance}
 
-One of our goal is to \textit{identify the observational regime}, for which no internvention was applied. In order to do so, we argue that we need to make additional assumptions on the data-generation process, otherwise the observational regime will be indistinguishable from the other regimes. In Figure \ref{fig:assumption}, we discuss the necessity of these assumptions trought a simple example with two variable and one mechanism. In this example, we have two variables $X_1$ and $X_2$. We have access to infinite data comming from possibly different regimes. Finally we assume that the intervention applied is strong enough to significantly alter the data distribution, such that each cluster of samples $D_{I_k}$ is well separated from the others. Without providing a formal proof, we argue that the necessary conditions for the identification of the observational regime are  \textbf{single-target internventional regime} and \textbf{unique internvention per mechanism}.
+One of our goal is to \textit{identify the observational regime}, for which no
+internvention was applied. In order to do so, we argue that we need to make
+additional assumptions on the data-generation process, otherwise the
+observational regime will be indistinguishable from the other regimes. In
+Figure \ref{fig:assumption}, we discuss the necessity of these assumptions
+trought a simple example with two variable and one mechanism. In this example,
+we have two variables $X_1$ and $X_2$. We have access to infinite data comming
+from possibly different regimes. Finally we assume that the intervention
+applied is strong enough to significantly alter the data distribution, such
+that each sub-distribution that generated $D_{I_k}$ is well separated from the
+others. Trought this example, we argue that the necessary conditions for the
+identification of the observational regime are \textbf{single-target
+    internventional regime} and \textbf{unique internvention per mechanism}. Formal
+proof of this claim is left for future work.
 
 \begin{figure}
     \centering
-        \includegraphics[width=0.5\textwidth]{images/assumption.pdf}
-        \caption{Illustration of the necessity of the assumption on the data-generation process. a). \textbf{Single Target / Uniq. Intervention}: $\mathcal{I}_1$ can't be $\mathcal{I}_{\mathcal{O}}$ because this would break the interventional-Faithfulness assumption ($\mathcal{I}_2$ would then correspond to a internv. on marginal $p(x_1)$ which should also alter the marginal of its descendent: $p(x_2)$). $\mathcal{I}_2$ can't be $\mathcal{I}_{\mathcal{O}}$ because this would break the single target assumption (In $\mathcal{I}_1$, while the marginal $p(x_1)$ has changed, $p(x_2)$ remain not affected. For this to be possible is to have performed an internvention on $p(x_1)$ and one on $p(x_2|x_1)$ to cancel out the effect of the first one on $p(x_2)$). Therefore, the only possible observational regime is $\mathcal{I}_3$. b) \textbf{Multiple Target / Uniq. Intervention}: Here we add another regime $\mathcal{I}_4$ targeting both $p(x_1)$ and $p(x_2|x_1)$. In this case, the regimes become completely simmetric and the observational regime can't be identified. c) \textbf{Single Target / Non-Uniq. intervention}: Here we add another regime $\mathcal{I}_4$. In this case, $\mathcal I_1$ and $\mathcal{I}_4$ have symetric role and the observational regime can't be identified.}
-        \label{fig:assumption}
-    \end{figure}
-
+    \includegraphics[width=0.5\textwidth]{images/assumption.pdf}
+    \caption{Illustration of the necessity of the assumption considered on the data-generation process. a). \textbf{Single Target / Uniq. Intervention}: The regime $\mathcal{I}_1$ can't be the observational regime $\mathcal{O}$ because this would break the interventional-Faithfulness assumption ($\mathcal{I}_2$ would then correspond to a intervention made on marginal $p(x_1)$ which should also alter the marginal of its descendent: $p(x_2)$, which is not what we observe). $\mathcal{I}_2$ can't be $\mathcal{O}$ because this would break the single target assumption (In $\mathcal{I}_1$, while the marginal $p(x_1)$ has changed, $p(x_2)$ remain not affected. For this to be possible is to have performed an intervention on $p(x_1)$ and one on $p(x_2|x_1)$ to cancel out the effect of the first one on $p(x_2)$). Therefore, the only possible observational regime is $\mathcal{I}_3$. b) \textbf{Multiple Target / Uniq. Intervention}: Here we add another regime $\mathcal{I}_4$ targeting both $p(x_1)$ and $p(x_2|x_1)$. In this case, the regimes become completely symmetric and the observational regime can't be identified. c) \textbf{Single Target / Non-Uniq. intervention}: Here we add another regime $\mathcal{I}_4$. In this case, $\mathcal I_1$ and $\mathcal{I}_4$ have symetric role and the observational regime once again can't be identified.}
+    \label{fig:assumption}
+\end{figure}
 
 \section{Method}\label{subsec:Method}
-In this problem we are trying to learn a generative model of the data under unobserved interventions, for this purpose we will use a Variational Auto-encoder \citep{kingma2022autoencodingvariationalbayes}
-with discrete latent variables, the decoding will take profit of the known graph structure to reconstruct the variables $X_i$ from their sampled parents $\text{Pa}(X_i)$, in an autoregressive fashion.
-. In this setting the latent variables are the interventional target $z_i \quad i \in [1,N]$ of each sample $x$. In order to faithfully model the data-generation process,
-A VAE is a general framework for solving statistical modeling problem with unobserved latent variables. Given a data point $x$, the Variational Auto-encoder (VAE) is tasked to learn an approximate posterior distribution over these latent variables $q_\phi(z | x)$. Basically, the algorithm consist in maximizing the \textbf{evidence lower bound (ELBO)}, a lower bound of the log-likelihood of the data defined as follows :
+In this problem we are trying to learn a generative model of the data under
+unobserved interventions, for this purpose we will use a variational
+Auto-Encoder \citep{kingma2022autoencodingvariationalbayes} with discrete
+latent variables, the decoding will take profit of the known graph structure to
+reconstruct the variables $X_i$ from their sampled parents $\text{Pa}(X_i)$, in
+an autoregressive fashion. The integration of known causal structure into VAEs
+is not a novel idea, \citet{SCMVAE} used the same kind of structural prior to
+enforce disentangled representations that align with the causal structure. In
+our setting the latent variables are the interventional target $z_i \quad i \in
+    [1,N]$ of each sample $x$. In order to faithfully model the data-generation
+process, A VAE is a general framework for solving statistical modeling problem
+with unobserved latent variables. Given a data point $x$, the Variational
+Auto-encoder (VAE) is tasked to learn an approximate posterior distribution
+over these latent variables $q_\phi(z | x)$. Basically, the algorithm consist
+in maximizing the \textbf{evidence lower bound (ELBO)}, a lower bound of the
+log-likelihood of the data defined as follows :
 \begin{align*}
-    &\quad\quad \log p_\theta(x) \geq  \\
-    & \underbrace{ - \text{KL}\left(q_\phi(z | x) \,||\, p_\theta(z)\right)+ \mathbb{E}_{q_\phi(z | x)} \left[ \log p_\theta(x | z) \right]}_{\text{ELBO}}
+     & \quad\quad \log p_\theta(x) \geq                                                                                                                     \\
+     & \underbrace{ - \text{KL}\left(q_\phi(z | x) \,||\, p_\theta(z)\right)+ \mathbb{E}_{q_\phi(z | x)} \left[ \log p_\theta(x | z) \right]}_{\text{ELBO}}
 \end{align*}
 In this optimization problem, we want to find the parameters $\theta$ and $\phi$ that maximize the ELBO. $q_\phi(z | x)$ is the approximate posterior distribution over the latent variables and $\phi$ defines the variational family of distributions used to approximate the posterior. $p_\theta(z)$ is the prior distribution over the latent variables and $p_\theta(x | z)$ is the likelihood of the data given the latent variables. We refer to figure \ref{fig:architecture} for a representation of the full architecture of the model.
 \begin{figure}
-\centering
+    \centering
     \includegraphics[width=0.48\textwidth]{images/architecture.pdf}
-    \caption{Architecture of the Variational Auto-Encoder. An encoder takes as input the data $x$ and outputs the parameters of the approximate posterior categorical distribution $q_\phi(z | x)$. The sampled discrete latent variables $z$ are then fed to the decoder that outputs the parameters of the likelihood distribution $p_\theta(x | z)$. During backpropagation, the discrete latents are approximated using the Gumbel-Softmax reparametrization trick. For more details on the architecture of the likelyhood model $p_\theta(x | z)$, we refer to Figure \ref{fig:architecture_decoder}.}
+    \caption{Architecture of the variational Auto-Encoder. An encoder takes as input the data $x$ and outputs the parameters of the approximate posterior categorical distribution $q_\phi(z | x)$. The sampled discrete latent variables $z$ are then fed to the decoder that outputs the parameters of the likelihood distribution $p_\theta(x | z)$. During backpropagation, the discrete latents are approximated using the Gumbel-Softmax reparametrization trick. For more details on the architecture of the likelyhood model $p_\theta(x | z)$, we refer to Figure \ref{fig:architecture_decoder}.}
     \label{fig:architecture}
 \end{figure}
-\paragraph{Regime Learning ($q_\phi(z | x)$)}Given that for each mechanism $f_i$, we have a set of samples $D_{\mathcal{I}_k}$ that were generated under the same intervention $\mathcal{I}_k$, we can leverage this shared characteristic to better encode the interventions. We therefore propose to use a boolean latent variable $z_i$ that encodes the state of each mechanism $f_i$ (intervened or not intervened). We use the following formulation : $\tilde{z} \sim \mathcal{B}(\pi_\phi(x))$ and $z = \text{one-hot}(\tilde{z})$, where $\mathcal{B}$ is a multinoulli distribution parameterized by $\pi_\phi(x)$, the output of a 3-layers MLP that predict the probability of each mechanism to be intervened.
-\paragraph{Prior distribution ($p_\theta(z)$)} We will use a uniform prior over the latent variables $z$. \todo{justify}. We can now derive the Kullback-Leibler divergence term of the ELBO :
+\paragraph{Regime Learning ($q_\phi(z | x)$)}Given that for each mechanism $f_i$, we have a set of samples
+$D_{\mathcal{I}_k}$ that were generated under the same intervention
+$\mathcal{I}_k$, we can leverage this shared characteristic to better encode
+the interventions. We therefore propose to use a boolean latent variable $z_i$
+that encodes the state of each mechanism $f_i$ (intervened or not intervened).
+We use the following formulation : $\tilde{z} \sim \mathcal{B}(\pi_\phi(x))$
+and $z = \text{one-hot}(\tilde{z})$, where $\mathcal{B}$ is a multinoulli
+distribution parameterized by $\pi_\phi(x)$, the output of a 3-layers MLP that
+predict the probability of each mechanism to be intervened.
+\paragraph{Prior distribution ($p_\theta(z)$)} Without any additional information on the proportion of each regime, we will
+use a uniform prior over the latent variables $z$ which simplifies the
+derivation of the Kullback-Leibler divergence term of the ELBO :
 \begin{align*}
     -\text{KL}\left(q_\phi(z | x) \,||\, p_\theta(z)\right)
-    &= - \sum_{i} \pi_\phi(x)_i \log \frac{\pi_\phi(x)_i}{p_\theta(z_i)} \\
-    &= - \sum_{i} \pi_\phi(x)_i \log \frac{\pi_\phi(x)_i}{1/N} \\
-    &= - \sum_{i} \pi_\phi(x)_i \log \pi_\phi(x)_i - \log N \\
-    &= \text{H}(\pi_\phi(x)) - \log N
+     & = - \sum_{i} \pi_\phi(x)_i \log \frac{\pi_\phi(x)_i}{p_\theta(z_i)} \\
+     & = - \sum_{i} \pi_\phi(x)_i \log \frac{\pi_\phi(x)_i}{1/N}           \\
+     & = - \sum_{i} \pi_\phi(x)_i \log \pi_\phi(x)_i - \log N              \\
+     & = \text{H}(\pi_\phi(x)) - \log N
 \end{align*}
 \paragraph{Mechanism Learning ($p_\theta(x | z)$)}
 
-Given that the graph $\mathcal{G}$ is known, we can use the following factorization of the likelihood :
+Given that the graph $\mathcal{G}$ is known, we can use the following
+factorization of the likelihood :
 \begin{align*}
-    p_\theta(x | z) &= \prod_{i = 1}^N p_\theta(x_i | \text{Pa}(X_i), z_i) \\
-    &= \prod_{i = 1}^N p_\theta(x_i | \text{Pa}(X_i), z_i)
+    p_\theta(x | z) & = \prod_{i = 1}^N p_\theta(x_i | \text{Pa}(X_i), z_i) \\
+                    & = \prod_{i = 1}^N p_\theta(x_i | \text{Pa}(X_i), z_i)
 \end{align*}
-We will use a 3-layers MLP \todo{we could use two sub model and just linear} to model the conditional distribution $p_\theta(x_i | \text{Pa}(X_i), z_i)$ for each mechanism $f_i$. Specifically, $p_\theta(x_i | \text{Pa}(X_i), z_i) = \mathcal{N}(\mu_\theta(x_i, \text{Pa}(X_i), z_i), 1)$ where $\mu_\theta(x_i, \text{Pa}(X_i), z_i)$ is the output of a neural network that takes as input the parents of $X_i$ and the infered state of the mechanism $z_i$. We chose to model the likelihood as a gaussian distribution with unit variance because it allows to account for the stochasticity of the exogenous variable $N_i$ while keeping the optimization of the ELBO simple. Specifically, the likelihood term of the ELBO can be written as follows :
+We assume that $p_\theta(x_i | \text{Pa}(X_i), z_i) = \mathcal{N}(\mu_\theta(x_i, \text{Pa}(X_i), z_i), 1)$, where $\mu_\theta(x_i, \text{Pa}(X_i), z_i)$ is the output of a 3-layer MLP that takes as input the parents of $X_i$ and the inferred state of the mechanism $z_i$. We model the likelihood as a Gaussian distribution with unit variance to simplify the optimization of the ELBO. This design choice suppose that the data was sampled from an SCM with additive Gaussian (Normal) noise. In future work, we plan to extend this model to more complex mechanisms.
+The likelihood term of the ELBO can now be written as follows :
+
+We will use a to model each of the conditional distributions $p_\theta(x_i |
+    \text{Pa}(X_i), z_i)$ for each mechanism $f_i$.
 \begin{align*}
-    & \quad \mathbb{E}_{q_\phi(z | x)} \left[ \log p_\theta(x | z) \right] \\ &\simeq \underbrace{\frac{1}{L} \sum_{l = 1}^L }_{\text{n latent samples}} \sum_{i = 1}^N \log \mathcal{N}(x_i | \mu_\theta(x_i, \text{Pa}(X_i), z_i), 1)\\
-    &\simeq \frac{1}{L} \sum_{l = 1}^L \sum_{i = 1}^N \left( -\frac{1}{2} \left( x_i - \mu_\theta(x_i, \text{Pa}(X_i), z_i) \right)^2 \right) + \text{const.}
+     & \quad \mathbb{E}_{q_\phi(z | x)} \left[ \log p_\theta(x | z) \right]                                                                                     \\ &\simeq \underbrace{\frac{1}{L} \sum_{l = 1}^L }_{\text{n latent samples}} \sum_{i = 1}^N \log \mathcal{N}(x_i | \mu_\theta(x_i, \text{Pa}(X_i), z_i), 1)\\
+     & \simeq \frac{1}{L} \sum_{l = 1}^L \sum_{i = 1}^N \left( -\frac{1}{2} \left( x_i - \mu_\theta(x_i, \text{Pa}(X_i), z_i) \right)^2 \right) + \text{const.}
 \end{align*}
 Maximizing the expected log-likelihood of the data under the model is equivalent to minimizing the MSE loss for each mechanism of the causal model. In practice, when considering large enought mini-batch, we can use single-sample Monte-Carlo estimation $L=1$ to limit the computational cost of the ELBO optimization.
 
-In order to sample from the likelihood model, we will use an autoregressive decoder that reconstruct the input sample $x$ following the topological order of the graph $\mathcal{G}$. This is done by sampling each variable $X_i$ given its parents $\text{Pa}(X_i)$ and the latent variable $z_i$. We refer the reader to Figure \ref{fig:architecture_decoder} for a representation of the architecture of the likelihood model $p_\theta(x | z)$.
+In order to sample from the likelihood model, similarly to \citet{CausalVAE}
+with their \textit{Causal Layer}, we will use an autoregressive decoder to
+reconstruct the input sample $x$ following the topological order of the graph
+$\mathcal{G}$. This is done by sampling each variable $X_i$ given its parents
+$\text{Pa}(X_i)$ and the latent variable $z_i$ encoding the state of the
+mechanism. We refer the reader to Figure \ref{fig:architecture_decoder} for a
+representation of the architecture of the likelihood model $p_\theta(x | z)$.
+Due to the stochastic nature of the sampling process, it is impossible for the
+model to reconstruct the input sample $X_i$ perfectly. Instead, the model can
+only aim to approximate its conditional mean
+$\mathbb{E}_{p(X_i|\text{Pa}(X_i),z_i)}[X_i]$.
 \begin{figure}
-\centering
+    \centering
     \includegraphics[width=0.35\textwidth]{images/architecture_decoder.pdf}
     \caption{Architecture of the likelihood model $p_\theta(x | z)$. Each mechanism $f_i$ is modeled as a gaussian distribution with mean $\mu_\theta(x_i, \text{Pa}(X_i), z_i)$ and unit variance. The mean of the input sample is reconstructed autoregressively following the topological order of the graph $\mathcal{G}$.}
     \label{fig:architecture_decoder}
 \end{figure}
 \paragraph{discrete reparametrization trick}
-The latent variable $z$ lies in a discrete space, which makes the objective non-differentiable with respect to the sampling process $q_\phi(z | x)$. For this reason, we will use the Gumbel Softmax reparameterization trick \citep{jang2017categoricalreparameterizationgumbelsoftmax} to make the sampling process differentiable while keeping the discrete nature of the latent variables.
- \todo{add a section in poster  : why I made these choice}
+The latent variable $z$ lies in a discrete space, which makes the objective
+non-differentiable with respect to the sampling process $q_\phi(z | x)$. For
+this reason, we will use the Gumbel Softmax reparameterization trick
+\citep{jang2017categoricalreparameterizationgumbelsoftmax} to make the sampling
+process differentiable while keeping the discrete nature (i.e. boolean) of the
+latent variables.
 \section{Experiments}\label{subsec:Experiments}
-In this section, we discuss the experiments that we run to evaluate the performance of our model at inferring the right regimes and learning the mechanisms of the causal model. We will first describe the data-generation process, then we will present the evaluation metrics used to assess the performance of our model. We will Additionally run an ablation study to evaluate the necessity of some of the assumption we made in the data-generation process. The method is implemented in Pytorch Lightning and the code is available at \url{https://github.com/3rdCore/VariationalCausalModelling}.
+In this section, we discuss the experiments that we run to evaluate the
+performance of our model at inferring the right regimes and learning the
+mechanisms of the causal model. We will first describe the data-generation
+process, then we will present the evaluation metrics used to assess the
+performance of our model. The method is implemented in Pytorch Lightning and
+the code to reproduce precisely the experiments and plots is available at
+\url{https://github.com/3rdCore/VariationalCausalModelling}.
 
-Compared to the standard EM for which a closed form update does not always exist, Variational methods allows to describe a wider variety of posterior distributions, allowing to tackle more complex (i.e. realistic) problems.\footnote{ANM are not realistic, but they are a good starting point to evaluate the performance of our model.}
-
+Compared to the standard EM for which a closed form update does not always
+exist, Variational methods allows to describe a wider variety of posterior
+distributions, allowing to tackle more complex (i.e. realistic)
+problems.\footnote{ANM are not realistic, but they serve as a good starting
+    point to evaluate the performance of our model.}
 
 \subsection{Data-generation process}
 
-To evaluate our model, we need a dataset that was generated from a known causal model that satisfy the assumptions we presented in Section \ref{subsec:setting}.
-In this project, we consider that the SCM that generated the data is an additive noise model (ANM) with linear mechanisms. The data is generated as follows : We have $N$ variables $X = \left\{ X_1, X_2, \cdots, X_N \right\}$.  The DAG $\mathcal{G}$ is sampled from a Erdos-Renyi DAG distribution with a fixed probability of edge $p$. Given that structure, the mechanisms $f_i$ are defined as linear functions of their parents and the exogenous noise terms :
+To evaluate our model, we need a dataset that was generated from a known causal
+model that satisfy the assumptions we presented in Section
+\ref{subsec:setting}. In this project, we consider that the SCM that generated
+the data is an additive noise model (ANM) with linear mechanisms. The data is
+generated as follows : We have $N$ variables $X = \left\{ X_1, X_2, \cdots, X_N
+    \right\}$. The DAG $\mathcal{G}$ is sampled from a Erdos-Renyi DAG distribution
+with a fixed probability of edge $p$. Given that structure, the mechanisms
+$f_i$ are defined as linear functions of their parents and the exogenous noise
+terms :
 \begin{equation}
     X_i = f_i(\text{Pa}(X_i), \epsilon_i) =
     \sum_{j \in \text{Pa}(X_i)} w_{ij} X_j + \epsilon_i
@@ -227,22 +391,30 @@ In order to satisfy the faithfulness assumption, we sample the weights $w_{ij}$ 
 
 \subsection{Evaluation metrics}
 
-\paragraph{Reconstruction error} The reconstruction error is the mean squared error between the input sample $x$ and the output of the decoder $x_{\text{reconstructed}}$.
+\paragraph{Reconstruction error} The reconstruction error is the mean squared error between the input sample $x$
+and the output of the decoder $\hat{x}$.
 
 \subsection{Results}
 
-
 \todo{when the internvention are not strong enough, the latent features collapses during training, this is because even tought z was informative, there not much gain in predictive power since the two distribution are almost the same.}
+
+In future work, we plan to run an ablation study to confirm the necessity of
+some of the assumption we made in the data-generation process.
 
 \section{Conclusion}\label{subsec:Conclusion}
 
-In this project, we propose to tackle the problem of causal modelling under unknown interventions and regime as a latent variable model. We use a Variational Auto-encoder with discrete latent variables to jointly infer the interventional regime and the causal mechanisms in their different regime. It is too early to draw strong conclusion on the ability of our method to systematically identify the regime, but we can already see that some assumptions on the DGP are necessary to avoid latent variable collapse.
+In this project, we propose to tackle the problem of causal modelling under
+unknown interventional regime as a latent variable model. We use a variational
+Auto-Encoder with discrete latent variables to jointly infer the interventional
+regime and the causal mechanisms in their different regime. It is too early to
+draw strong conclusion on the ability of our method to systematically identify
+the regime, but we can already see that some assumptions on the DGP are
+necessary to avoid latent variable collapse.
 
 \bibliography{references}
 \bibliographystyle{icml2018}
 
 \end{document}
-
 
 % This document was modified from the file originally made available by
 % Pat Langley and Andrea Danyluk for ICML-2K. This version was created
