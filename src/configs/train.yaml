@@ -19,14 +19,14 @@ task :
   encoder: ${encoder}
   decoder: ${decoder}
   lr: 1e-3
-  temperature: 0.4
+  temperature: 1
   beta: 1.0
   is_beta_VAE : False
 
 SCM:
   _target_: dataset.SCM
   n_variables : 10
-  density : 0.4
+  density : 0.1
   interventional_shift : 10.0
 
 train_dataset:
@@ -34,7 +34,7 @@ train_dataset:
   generator : LinearANM
   n_samples: 10000
   scm: ${SCM}
-  observational_density: 0.1
+  observational_density: 0.2
   shift: 1.0
 
 val_dataset:
@@ -47,12 +47,12 @@ val_dataset:
 
 datamodule:
   _target_: dataset.SCMDataModule
-  batch_size: 64
+  batch_size: 32
   train_dataset: ${train_dataset}
   val_dataset: ${val_dataset}
 
 trainer:
-  max_epochs: 100
+  max_epochs: 200
   enable_progress_bar: True
   log_every_n_steps: 10
   limit_train_batches: 0.1
@@ -60,7 +60,7 @@ trainer:
 encoder:
   _target_: model.CMEncoder
   input_dim: ${SCM.n_variables}
-  hidden_dim: 64
+  hidden_dim: 128
   latent_dim: "${ast_eval:'${SCM.n_variables}+1'}"
   n_layers: 3
   activation: relu
@@ -85,5 +85,6 @@ callbacks:
     _target_: task.CyclicalAnnealingCallback
     max_value: 1.0
     min_value: 0.0
-    period: 10
-    max_cycle: 5
+    period: 5
+    max_cycle: 10
+    warmup_epochs: 3

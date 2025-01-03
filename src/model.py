@@ -79,8 +79,9 @@ class CMDecoder(abstract_model):
         self.topological_orders = self.graph.get_topological_orders()
         self.mechanisms = nn.ModuleList()
         for i in range(self.graph().shape[0]):
-            numb_parents = self.graph()[:, self.topological_orders[i]].sum()
-            input_dim = 2 + numb_parents
+            n_parents = self.graph()[:, self.topological_orders[i]].sum()
+            n_variables = self.graph().shape[0]
+            input_dim = 1 + n_variables + n_parents
             self.mechanisms.append(build_model(input_dim, self.hidden_dim, 1, self.n_layers, self.activation))
 
     @beartype
@@ -95,8 +96,7 @@ class CMDecoder(abstract_model):
             input = torch.cat(
                 (
                     x[:, parents],
-                    z[:, self.topological_orders[i] + 1].unsqueeze(1),
-                    1 - z[:, self.topological_orders[i] + 1].unsqueeze(1),
+                    z,
                 ),
                 dim=1,
             )  # todo verify if that suffices

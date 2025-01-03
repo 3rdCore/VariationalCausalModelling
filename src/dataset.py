@@ -12,7 +12,7 @@ from beartype import beartype
 from lightning import LightningDataModule
 from pytorch_lightning.utilities.seed import isolate_rng
 from torch import FloatTensor, Tensor
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 
 warnings.filterwarnings("ignore", message=".*does not have many workers.*")
 
@@ -71,24 +71,6 @@ class SCM:
             "int_mean_shift": int_mean_shift,
             "int_cov_shift": int_cov_shift,
         }
-
-
-class Dataset(ABC):
-    @abstractmethod
-    def __len__(self) -> int:
-        pass
-
-    @abstractmethod
-    def __getitem__(self, index: int) -> Any:
-        """Get sample from the dataset.
-
-        Args:
-            index (int): sample index.
-
-        Returns:
-            Any: sample.
-        """
-        pass
 
 
 class SCM_Dataset(Dataset):
