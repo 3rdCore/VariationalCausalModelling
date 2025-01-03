@@ -337,6 +337,16 @@ INPUT /home/mila/t/tom.marty/texlive/texmf-dist/tex/latex/psnfss/ot1pcr.fd
 INPUT /home/mila/t/tom.marty/texlive/texmf-dist/fonts/tfm/adobe/courier/pcrr7t.tfm
 INPUT /home/mila/t/tom.marty/texlive/texmf-dist/fonts/vf/adobe/courier/pcrr7t.vf
 INPUT /home/mila/t/tom.marty/texlive/texmf-dist/fonts/tfm/adobe/courier/pcrr8r.tfm
+INPUT ./images/results.pdf
+INPUT ./images/results.pdf
+INPUT ./images/results.pdf
+INPUT ./images/results.pdf
+INPUT ./images/results.pdf
+INPUT ./images/ARI.pdf
+INPUT ./images/ARI.pdf
+INPUT ./images/ARI.pdf
+INPUT ./images/ARI.pdf
+INPUT ./images/ARI.pdf
 INPUT ./main.bbl
 INPUT ./main.bbl
 INPUT main.bbl

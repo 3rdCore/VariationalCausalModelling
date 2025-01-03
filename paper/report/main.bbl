@@ -1,4 +1,4 @@
-\begin{thebibliography}{9}
+\begin{thebibliography}{10}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -21,6 +21,11 @@ Faria, G. R.~A., Martins, A., and Figueiredo, M. A.~T.
 \newblock In \emph{Proceedings of the {First} {Conference} on {Causal} {Learning} and {Reasoning}}, pp.\  253--274. PMLR, June 2022.
 \newblock URL \url{https://proceedings.mlr.press/v177/faria22a.html}.
 \newblock ISSN: 2640-3498.
+
+\bibitem[Fu et~al.(2019)Fu, Li, Liu, Gao, Celikyilmaz, and Carin]{fu2019cyclicalannealingschedulesimple}
+Fu, H., Li, C., Liu, X., Gao, J., Celikyilmaz, A., and Carin, L.
+\newblock Cyclical annealing schedule: A simple approach to mitigating kl vanishing, 2019.
+\newblock URL \url{https://arxiv.org/abs/1903.10145}.
 
 \bibitem[Jang et~al.(2017)Jang, Gu, and Poole]{jang2017categoricalreparameterizationgumbelsoftmax}
 Jang, E., Gu, S., and Poole, B.
